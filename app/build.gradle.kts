@@ -41,6 +41,10 @@ android {
 }
 
 dependencies {
+    //Vico
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+
     //Navigation
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
