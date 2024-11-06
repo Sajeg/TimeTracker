@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.sajeg.timetracker.screens.DetailScreen
 import com.sajeg.timetracker.screens.Setup
 import com.sajeg.timetracker.screens.ViewData
 import kotlinx.serialization.Serializable
@@ -21,9 +22,12 @@ fun SetupNavGraph(
         composable<ViewData> {
             ViewData(navController)
         }
-//        composable<FileViewerScreen> {
-//            val params = it.toRoute<FileViewerScreen>()
-//            FileViewer(navController, params.path)
+        composable<DetailScreen> {
+            val params = it.toRoute<DetailScreen>()
+            DetailScreen(navController, params.packageName)
+        }
+//        composable<TestDetail> {
+//            DetailScreen(navController, "ioeiowefioewf")
 //        }
     }
 }
@@ -34,8 +38,11 @@ object Setup
 @Serializable
 object ViewData
 
+@Serializable
+data class DetailScreen(
+    val packageName: String
+)
+
 //@Serializable
-//data class FileViewerScreen(
-//    val path: String
-//)
+//object TestDetail
 

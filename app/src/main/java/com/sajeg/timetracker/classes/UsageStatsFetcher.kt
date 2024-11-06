@@ -4,7 +4,6 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
-import android.util.Log
 import java.time.ZonedDateTime
 
 class UsageStatsFetcher(context: Context) {
@@ -23,7 +22,7 @@ class UsageStatsFetcher(context: Context) {
         return usageStatsList
     }
 
-    fun getAppUsage(packageName: String): HashMap<Int, Long> {
+    fun getHourlyAppUsage(packageName: String): HashMap<Int, Long> {
         val output = HashMap<Int, Long>()
         var startTime =
             ZonedDateTime.now().withHour(0).withMinute(0).withSecond(0).toEpochSecond() * 1000L
@@ -31,17 +30,17 @@ class UsageStatsFetcher(context: Context) {
         output.put(0, 0L)
         for (hourOfTime in 1..24) {
             var usageTime = getUsageStats(
-                startTime + (3600 * 1000 * (hourOfTime - 1)),
-                startTime + (3600 * 1000 * hourOfTime)
+                startTime + (3600 * 1000) * (hourOfTime - 1),
+                startTime + (3600 * 1000) * hourOfTime
             )
-            Log.d("AppUsageTotal", usageTime.toString())
             val appUsed = usageTime.get(packageName)
             if (appUsed == null) {
-                return output
+                output.put(hourOfTime, 0)
+            } else {
+                output.put(hourOfTime, appUsed)
             }
-
-            output.put(hourOfTime, appUsed)
         }
+
         return output
     }
 
