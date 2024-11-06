@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.sajeg.timetracker.screens.AppOverview
 import com.sajeg.timetracker.screens.DetailScreen
 import com.sajeg.timetracker.screens.Setup
 import com.sajeg.timetracker.screens.ViewData
@@ -26,9 +27,9 @@ fun SetupNavGraph(
             val params = it.toRoute<DetailScreen>()
             DetailScreen(navController, params.packageName)
         }
-//        composable<TestDetail> {
-//            DetailScreen(navController, "ioeiowefioewf")
-//        }
+        composable<AppOverview> {
+            AppOverview(navController)
+        }
     }
 }
 
@@ -43,6 +44,6 @@ data class DetailScreen(
     val packageName: String
 )
 
-//@Serializable
-//object TestDetail
+@Serializable
+object AppOverview
 
