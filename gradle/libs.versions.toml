@@ -1,5 +1,6 @@
 [versions]
 agp = "8.7.2"
+glide = "1.0.0-beta01"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -14,6 +15,7 @@ kotlinxSerializationJson = "1.7.2"
 vico = "2.0.0-beta.2"
 
 [libraries]
+glide = { module = "com.github.bumptech.glide:compose", version.ref = "glide" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }

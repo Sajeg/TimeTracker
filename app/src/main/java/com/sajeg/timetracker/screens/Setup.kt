@@ -14,7 +14,8 @@ import com.sajeg.timetracker.ViewData
 @Composable
 fun Setup(navController: NavController) {
     val context = LocalContext.current
-    val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+    val intent = Intent("android.settings.USAGE_ACCESS_SETTINGS")
+    intent.setPackage("com.android.settings")
 
     val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     val endTime = System.currentTimeMillis()
@@ -24,7 +25,7 @@ fun Setup(navController: NavController) {
         UsageStatsManager.INTERVAL_DAILY, startTime, endTime
     )
     if (usageStatsList.isEmpty()) {
-        context.startActivity(intent)
+        context.startActivity(intent, null)
         navController.navigate(ViewData)
     } else {
         navController.navigate(ViewData)

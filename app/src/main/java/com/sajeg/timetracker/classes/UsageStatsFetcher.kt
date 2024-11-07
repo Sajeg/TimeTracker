@@ -10,14 +10,10 @@ class UsageStatsFetcher(context: Context) {
     val usageStatsManager =
         context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
-    fun getUsedApps(): List<UsageStats> {
-        val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 3600 * 24 // last 24 hours
-
+    fun getUsedApps(startTime: Long, endTime: Long): List<UsageStats> {
         val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
+            UsageStatsManager.INTERVAL_BEST, startTime, endTime
         )
-
 
         return usageStatsList
     }

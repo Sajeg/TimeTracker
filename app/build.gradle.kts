@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.sajeg.timetracker"
-        minSdk = 35
+        minSdk = 32
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -44,6 +44,9 @@ android {
 }
 
 dependencies {
+    //Glide
+    implementation(libs.glide)
+
     //Vico
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
