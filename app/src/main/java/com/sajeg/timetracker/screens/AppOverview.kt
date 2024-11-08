@@ -1,6 +1,7 @@
 package com.sajeg.timetracker.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
+import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.AppName
@@ -46,7 +48,6 @@ import com.sajeg.timetracker.composables.millisecondsToTimeString
 
 @Composable
 fun AppOverview(navController: NavController) {
-    val context = LocalContext.current
     val currentDestination = navController.currentDestination?.route
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
@@ -73,13 +74,15 @@ fun AppOverview(navController: NavController) {
                 onClick = { navController.navigate(AppOverview) }
             )
         }
-        AppGrid(Modifier)
+        AppGrid(Modifier) {
+            navController.navigate(DetailScreen(it))
+        }
     }
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun AppGrid(modifier: Modifier) {
+fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val context = LocalContext.current
     val usageList = UsageStatsFetcher(context).getUsedApps(0L, System.currentTimeMillis())
     val packageManager = context.packageManager
@@ -115,6 +118,7 @@ fun AppGrid(modifier: Modifier) {
                     .fillMaxSize()
                     .height(160.dp)
                     .clip(RoundedCornerShape(15.dp))
+                    .clickable { onClick(app.packageName) }
             ) {
                 GlideImage(
                     model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${app.packageName}.jpg",

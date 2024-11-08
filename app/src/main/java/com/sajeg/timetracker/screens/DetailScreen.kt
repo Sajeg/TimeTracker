@@ -1,70 +1,198 @@
 package com.sajeg.timetracker.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisTickComponent
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
-import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
-import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
-import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
-import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
-import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
-import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
-import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
-import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
-import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.sajeg.timetracker.AppOverview
+import com.sajeg.timetracker.R
+import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.UsageStatsFetcher
+import com.sajeg.timetracker.composables.Plot
+import java.time.LocalDate
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun DetailScreen(navController: NavController, packageName: String) {
     navController.context
-    val modelProducer = remember { CartesianChartModelProducer() }
-    val scrollState = rememberVicoScrollState()
-    val zoomState = rememberVicoZoomState()
     val context = LocalContext.current
-    val usageDataHourly = UsageStatsFetcher(context).getHourlyAppUsage(packageName)
-    val horizontalAxis = HorizontalAxis.rememberBottom(
-        label = rememberAxisLabelComponent(),
-        tick = rememberAxisTickComponent(),
-        guideline = rememberAxisGuidelineComponent(),
-        title = "Time of the Day"
+    val today = LocalDate.now()
+    val lastWeek = LocalDate.now().minusWeeks(1)
+    val usageDataHourly = UsageStatsFetcher(context).getHourlyDayAppUsage(
+        packageName = packageName,
+        year = today.year,
+        month = today.month.value,
+        day = today.dayOfMonth
     )
-    usageDataHourly.forEach {
-        usageDataHourly.put(it.key, it.value / (1000 * 60))
-    }
-    LaunchedEffect(Unit) {
-        modelProducer.runTransaction {
-            lineSeries { series(x = usageDataHourly.keys, y = usageDataHourly.values) }
-        }
-    }
-
-    Box(
-        modifier = Modifier.padding(10.dp)
+    val usageDataHourlyYesterday = UsageStatsFetcher(context).getHourlyDayAppUsage(
+        packageName = packageName,
+        year = lastWeek.year,
+        month = lastWeek.month.value,
+        day = lastWeek.dayOfMonth
+    )
+    Row(
+        modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
-        ProvideVicoTheme(rememberM3VicoTheme()) {
-            CartesianChartHost(
-                rememberCartesianChart(
-                    rememberLineCartesianLayer(),
-                    startAxis = VerticalAxis.rememberStart(),
-                    bottomAxis = horizontalAxis
-                ),
-                modelProducer,
-                Modifier,
-                scrollState,
-                zoomState
+        NavigationRail {
+            NavigationRailItem(
+                selected = false,
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.hourglass),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(ViewData) }
             )
+            NavigationRailItem(
+                selected = false,
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.apps),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(AppOverview) }
+            )
+        }
+        Column {
+            Row(
+                modifier = Modifier
+                    .padding(vertical = 30.dp)
+                    .padding(end = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.Start)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(15.dp))
+                        .height(220.dp)
+                        .weight(0.4f)
+                ) {
+                    GlideImage(
+                        model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${packageName}.jpg",
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            RoundedCornerShape(15.dp)
+                        )
+                        .weight(0.5f)
+                ) {
+                    Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly, usageDataHourlyYesterday)
+                }
+            }
+            Row(
+            ) {
+
+                var text = buildAnnotatedString {
+                    append("In the past week you played ")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("5h and 4m")
+                    }
+                    append(" ")
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("Synth Riders")
+                    }
+                    append(" that's ")
+                    withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) {
+                        append("5%")
+                    }
+                    append(" of your weeks total playtime.")
+                }
+                Text(text, fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
+            }
+            Row (
+                modifier = Modifier
+                    .padding(vertical = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
+            ){
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(15.dp))
+                        .padding(15.dp)
+                ) {
+                    Column {
+                        Text(
+                            "Total playtime: 100h 53m",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "Last Played: 13. June 2023",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "Most played on one Day: 5h",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "First Played: 10. June 2024",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(15.dp))
+                        .padding(15.dp)
+                ) {
+                    Column {
+                        Text(
+                            "This week: 10h",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "Last week: 4h",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "This month: 5h",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            "Last month: 5h",
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 24.sp
+                        )
+                    }
+                }
+            }
         }
     }
 }

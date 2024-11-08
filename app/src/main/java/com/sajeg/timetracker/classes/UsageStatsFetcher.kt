@@ -4,6 +4,9 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.util.Log
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class UsageStatsFetcher(context: Context) {
@@ -18,30 +21,30 @@ class UsageStatsFetcher(context: Context) {
         return usageStatsList
     }
 
-    fun getHourlyAppUsage(packageName: String): HashMap<Int, Long> {
+    fun getHourlyDayAppUsage(packageName: String, year: Int, month: Int, day: Int): PlottingData {
         val output = HashMap<Int, Long>()
-        var startTime =
-            ZonedDateTime.now().withHour(0).withMinute(0).withSecond(0).toEpochSecond() * 1000L
-
+        val userZoneId = ZoneId.systemDefault()
+        val userZoneOffset = ZonedDateTime.now(userZoneId).offset
+        val startTime = LocalDateTime.of(year, month, day, 0, 0, 0).toEpochSecond(userZoneOffset)
+        val hoursList = mutableListOf<Long>()
+        val minutesList = mutableListOf<Long>()
+        Log.d("StartTime", startTime.toString())
         output.put(0, 0L)
         for (hourOfTime in 1..24) {
             var usageTime = getUsageStats(
-                startTime + (3600 * 1000) * (hourOfTime - 1),
-                startTime + (3600 * 1000) * hourOfTime
+                startTime + (3600) * (hourOfTime - 1),
+                startTime + (3600) * hourOfTime
             )
             val appUsed = usageTime.get(packageName)
-            if (appUsed == null) {
-                output.put(hourOfTime, 0)
-            } else {
-                output.put(hourOfTime, appUsed)
-            }
+            minutesList.add(appUsed?.div(1000 * 60) ?: 0)
+            hoursList.add(hourOfTime.toLong())
         }
 
-        return output
+        return PlottingData(hoursList, minutesList)
     }
 
     fun getUsageStats(startTime: Long, endTime: Long): HashMap<String, Long> {
-        var usageEvents = usageStatsManager.queryEvents(startTime, endTime)
+        var usageEvents = usageStatsManager.queryEvents(startTime * 1000, endTime * 1000)
         val map = HashMap<String, MutableList<UsageEvents.Event>>()
         val appUsage = HashMap<String, Long>()
         while (usageEvents.hasNextEvent()) {
@@ -58,7 +61,6 @@ class UsageStatsFetcher(context: Context) {
         map.forEach { (packageName, events) ->
             var totalTime = 0L
             val totalEvents = events.size
-
             if (totalEvents > 1) {
                 for (i in 0 until totalEvents - 1) {
                     val e0 = events[i]
