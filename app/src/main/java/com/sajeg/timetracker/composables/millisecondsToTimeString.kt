@@ -8,6 +8,7 @@ fun millisecondsToTimeString(time: Long): String {
     return when {
         hours > 0 -> "${hours}h ${minutes % 60}m"
         minutes > 0 -> "${minutes}m"
+        seconds > 0 -> "${seconds}s"
         else -> "0h"
     }
 }

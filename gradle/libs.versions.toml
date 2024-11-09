@@ -12,9 +12,14 @@ composeBom = "2024.10.01"
 navigationCompose = "2.8.3"
 kotlinSerialization = "2.0.0"
 kotlinxSerializationJson = "1.7.2"
+roomRuntime = "2.6.1"
 vico = "2.0.0-beta.2"
+datastorePreferences = "1.1.1"
 
 [libraries]
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
 glide = { module = "com.github.bumptech.glide:compose", version.ref = "glide" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }

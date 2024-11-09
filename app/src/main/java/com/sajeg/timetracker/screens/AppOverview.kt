@@ -21,6 +21,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
@@ -84,7 +85,6 @@ fun AppOverview(navController: NavController) {
 @Composable
 fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val context = LocalContext.current
-    val usageList = UsageStatsFetcher(context).getUsedApps(0L, System.currentTimeMillis())
     val packageManager = context.packageManager
     val apps = getInstalledVrGames(context)
     var storeNames = remember { mutableStateListOf<AppName?>(null) }
@@ -109,10 +109,15 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(29.dp, Alignment.Start)
     ) {
         items(apps) { app ->
-            val playtime =
-                usageList.find { it.packageName == app.packageName }?.totalTimeInForeground ?: 0
+            val playtime = remember { mutableLongStateOf(-1) }
             val appInfo = packageManager.getApplicationInfo(app.packageName, 0)
-            val name = storeNames.find { it?.packageName == app.packageName }?.name ?: packageManager.getApplicationLabel(appInfo).toString()
+            val name = storeNames.find { it?.packageName == app.packageName }?.name
+                ?: packageManager.getApplicationLabel(appInfo).toString()
+            if (playtime.longValue == -1L) {
+                UsageStatsFetcher(context).getTotalPlaytime(app.packageName) {
+                    playtime.longValue = it
+                }
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -139,7 +144,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 1)
-                            Text(millisecondsToTimeString(playtime))
+                            Text(millisecondsToTimeString(playtime.longValue))
                         }
                     }
                 }

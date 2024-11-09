@@ -9,6 +9,20 @@ import android.content.pm.PackageManager
 fun getInstalledVrGames(context: Context): List<ApplicationInfo> {
     val packageManager = context.packageManager
     val apps = mutableListOf<ApplicationInfo>()
+    val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+
+    for (packageInfo in packages) {
+        if (isValidApp(packageInfo.packageName, context)) {
+            apps.add(packageInfo)
+        }
+    }
+
+    return apps
+}
+
+fun isValidApp(packageName: String, context: Context): Boolean {
+    val packageManager = context.packageManager
+    val packageInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
     val excludedMetaSystemApps = listOf<String>(
         "com.oculus.accountscenter",
         "com.oculus.mobile_mrc_setup",
@@ -40,17 +54,11 @@ fun getInstalledVrGames(context: Context): List<ApplicationInfo> {
         "com.meta.environment.prod.bluehillgoldmine",
         "com.sajeg.questrpc"
     )
-
-    val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-
-    for (packageInfo in packages) {
-        if ((packageInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
-            (packageInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0 &&
-            !excludedMetaSystemApps.contains(packageInfo.packageName)
-        ) {
-            apps.add(packageInfo)
-        }
+    if ((packageInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
+        (packageInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0 &&
+        !excludedMetaSystemApps.contains(packageInfo.packageName)
+    ) {
+        return true
     }
-
-    return apps
+    return false
 }
