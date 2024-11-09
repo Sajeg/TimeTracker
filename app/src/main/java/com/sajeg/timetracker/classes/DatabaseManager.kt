@@ -8,6 +8,7 @@ import com.sajeg.timetracker.database.EventEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.collections.toTypedArray
 
 class DatabaseManager(context: Context) {
     val db = Room.databaseBuilder(context, Database::class.java, "events").build()
@@ -19,9 +20,9 @@ class DatabaseManager(context: Context) {
         }
     }
 
-    fun addEvent(packageName: String, startTime: Long, endTime: Long) {
+    fun getAppNames(onResponse: (List<AppEntity>) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
-            dao.newEvent(EventEntity(0, packageName, startTime, endTime, endTime - startTime))
+            onResponse(dao.getAppNames())
         }
     }
 
@@ -31,15 +32,9 @@ class DatabaseManager(context: Context) {
         }
     }
 
-    fun addApp(packageName: String, displayName: String) {
+    fun addAppNames(names: List<AppEntity>) {
         CoroutineScope(Dispatchers.IO).launch {
-            dao.newApp(AppEntity(packageName, displayName))
-        }
-    }
-
-    fun updateName(packageName: String, newName: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.updateAppName(AppEntity(packageName, newName))
+            dao.addAppNames(*names.toTypedArray())
         }
     }
 }

@@ -21,4 +21,10 @@ interface Dao {
 
     @Update
     fun updateAppName(entity: AppEntity)
+
+    @Query("SELECT * FROM appentity")
+    fun getAppNames(): List<AppEntity>
+
+    @Insert
+    fun addAppNames(vararg entity: AppEntity)
 }

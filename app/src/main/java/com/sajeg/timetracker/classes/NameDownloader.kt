@@ -1,6 +1,8 @@
 package com.sajeg.timetracker.classes
 
+import android.content.Context
 import android.util.JsonReader
+import com.sajeg.timetracker.database.AppEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,11 +19,23 @@ data class AppName(val packageName: String, var name: String) {
 
 class NameDownloader {
     val listURL = URL("https://files.cocaine.trade/LauncherIcons/oculus_apps.json")
-    val iconBaseUrl = "https://files.cocaine.trade/LauncherIcons/oculus_icon/"
 
-    fun getAppsName(packageNames: List<String>, onFinished: (List<AppName>) -> Unit) {
+    fun getStoreName(context: Context, packageNames: List<String>, onFinished: (List<AppEntity>) -> Unit) {
+        DatabaseManager(context).getAppNames() { names ->
+            if (names.isEmpty()) {
+                updateStoreNames(packageNames) { newNames ->
+                    DatabaseManager(context).addAppNames(newNames)
+                    onFinished(newNames)
+                }
+            } else {
+                onFinished(names)
+            }
+        }
+    }
+
+    fun updateStoreNames(packageNames: List<String>, onFinished: (List<AppEntity>) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
-            val customNames = mutableListOf<AppName>()
+            val customNames = mutableListOf<AppEntity>()
             val inputStream = withContext(Dispatchers.IO) {
                 listURL.openStream()
             }
@@ -38,7 +52,7 @@ class NameDownloader {
                         packageName = reader.nextString()
                         if (packageNames.contains(packageName) && name != null) {
                             customNames.add(
-                                AppName(packageName, name)
+                                AppEntity(packageName, name)
                             )
                         }
                     }

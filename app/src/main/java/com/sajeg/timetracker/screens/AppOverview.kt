@@ -42,10 +42,12 @@ import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.AppName
+import com.sajeg.timetracker.classes.DatabaseManager
 import com.sajeg.timetracker.classes.NameDownloader
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.getInstalledVrGames
 import com.sajeg.timetracker.composables.millisecondsToTimeString
+import com.sajeg.timetracker.database.AppEntity
 
 @Composable
 fun AppOverview(navController: NavController) {
@@ -87,13 +89,13 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val context = LocalContext.current
     val packageManager = context.packageManager
     val apps = getInstalledVrGames(context)
-    var storeNames = remember { mutableStateListOf<AppName?>(null) }
+    var storeNames = remember { mutableStateListOf<AppEntity?>(null) }
     val packageNames = mutableListOf<String>()
     apps.forEach { app ->
         packageNames.add(app.packageName)
     }
     LaunchedEffect(storeNames) {
-        NameDownloader().getAppsName(packageNames) {
+        NameDownloader().getStoreName(context, packageNames) {
             storeNames = it.toMutableStateList()
         }
     }
@@ -111,7 +113,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         items(apps) { app ->
             val playtime = remember { mutableLongStateOf(-1) }
             val appInfo = packageManager.getApplicationInfo(app.packageName, 0)
-            val name = storeNames.find { it?.packageName == app.packageName }?.name
+            val name = storeNames.find { it?.packageName == app.packageName }?.displayName
                 ?: packageManager.getApplicationLabel(appInfo).toString()
             if (playtime.longValue == -1L) {
                 UsageStatsFetcher(context).getTotalPlaytime(app.packageName) {
