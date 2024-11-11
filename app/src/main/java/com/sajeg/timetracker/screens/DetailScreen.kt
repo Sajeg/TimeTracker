@@ -50,12 +50,12 @@ fun DetailScreen(navController: NavController, packageName: String) {
         month = today.month.value,
         day = today.dayOfMonth
     )
-    val usageDataHourlyYesterday = UsageStatsFetcher(context).getHourlyDayAppUsage(
-        packageName = packageName,
-        year = lastWeek.year,
-        month = lastWeek.month.value,
-        day = lastWeek.dayOfMonth
-    )
+//    val usageDataHourlyYesterday = UsageStatsFetcher(context).getHourlyDayAppUsage(
+//        packageName = packageName,
+//        year = lastWeek.year,
+//        month = lastWeek.month.value,
+//        day = lastWeek.dayOfMonth
+//    )
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
@@ -108,7 +108,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         )
                         .weight(0.5f)
                 ) {
-                    Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly, usageDataHourlyYesterday)
+                    Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly)
                 }
             }
             Row(

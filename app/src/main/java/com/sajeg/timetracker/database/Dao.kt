@@ -13,6 +13,12 @@ interface Dao {
     @Query("SELECT * FROM evententity WHERE package_name = :packageName")
     fun getEventsFromApp(packageName: String): List<EventEntity>
 
+    @Query("SELECT * FROM appentity")
+    fun getAppNames(): List<AppEntity>
+
+    @Query("SELECT * FROM evententity WHERE (start_time > :startTime AND start_time < :endTime) OR (end_time < :endTime AND end_time > :startTime)")
+    fun getEvents(startTime: Long, endTime: Long): List<EventEntity>
+
     @Insert
     fun newEvent(vararg entity: EventEntity)
 
@@ -22,8 +28,7 @@ interface Dao {
     @Update
     fun updateAppName(entity: AppEntity)
 
-    @Query("SELECT * FROM appentity")
-    fun getAppNames(): List<AppEntity>
+
 
     @Insert
     fun addAppNames(vararg entity: AppEntity)

@@ -37,4 +37,10 @@ class DatabaseManager(context: Context) {
             dao.addAppNames(*names.toTypedArray())
         }
     }
+
+    fun getEvents(startTime: Long, endTime: Long, onResponse: (List<EventEntity>) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            onResponse(dao.getEvents(startTime, endTime))
+        }
+    }
 }

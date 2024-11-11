@@ -118,65 +118,32 @@ class UsageStatsFetcher(val context: Context) {
                 startTime + (3600) * hourOfTime
             )
             val appUsed = usageTime.get(packageName)
-            minutesList.add(appUsed?.div(1000 * 60) ?: 0)
+            minutesList.add(appUsed?.div(60) ?: 0)
             hoursList.add(hourOfTime.toLong())
+            Log.d("StartTimeMinutes", minutesList.toString())
         }
 
         return PlottingData(hoursList, minutesList)
     }
 
     fun getUsageStats(startTime: Long, endTime: Long): HashMap<String, Long> {
-        var usageEvents = usageStatsManager.queryEvents(startTime * 1000, endTime * 1000)
-        val map = HashMap<String, MutableList<UsageEvents.Event>>()
         val appUsage = HashMap<String, Long>()
-        while (usageEvents.hasNextEvent()) {
-            val currentEvent = UsageEvents.Event()
-            usageEvents.getNextEvent(currentEvent)
-            if (currentEvent.eventType == UsageEvents.Event.ACTIVITY_RESUMED ||
-                currentEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED
-            ) {
-                val key = currentEvent.packageName
-                map.getOrPut(key) { mutableListOf() }.add(currentEvent)
+        Log.d("SQLQuery", "SELECT * FROM evententity WHERE start_time > $startTime AND start_time < $endTime OR end_time < $endTime AND end_time > $startTime")
+        DatabaseManager(context).getEvents(startTime * 1000, endTime * 1000) { events ->
+            events.forEach { event ->
+                Log.d("EventSorter", "start: $startTime event: ${event.startTime} end: $endTime event: ${event.endTime}")
+                if (event.startTime < startTime && event.endTime > endTime) {
+                    appUsage.merge(event.packageName, (endTime - startTime), Long::plus)
+                } else if (event.startTime < startTime) {
+                    appUsage.merge(event.packageName, (event.endTime - startTime), Long::plus)
+                } else if (event.endTime > endTime) {
+                    appUsage.merge(event.packageName, (endTime - event.startTime), Long::plus)
+                } else {
+                    appUsage.merge(event.packageName, event.timeDiff, Long::plus)
+                }
+                Log.d("EventSorterMap", appUsage.toString())
             }
         }
-
-        map.forEach { (packageName, events) ->
-            var totalTime = 0L
-            val totalEvents = events.size
-            if (totalEvents > 1) {
-                for (i in 0 until totalEvents - 1) {
-                    val e0 = events[i]
-                    val e1 = events[i + 1]
-
-                    if (e0.eventType == UsageEvents.Event.ACTIVITY_RESUMED &&
-                        e1.eventType == UsageEvents.Event.ACTIVITY_PAUSED
-                    ) {
-                        val timeDiff = e1.timeStamp - e0.timeStamp
-                        if (timeDiff > 0 && timeDiff < endTime - startTime) {
-                            totalTime += timeDiff
-                        }
-                    }
-                }
-            }
-            if (events.isNotEmpty()) {
-                if (events.first().eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
-                    val timeDiff = events.first().timeStamp - startTime
-                    if (timeDiff > 0) {
-                        totalTime += timeDiff
-                    }
-                }
-
-                if (events.last().eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                    val timeDiff = endTime - events.last().timeStamp
-                    if (timeDiff > 0) {
-                        totalTime += timeDiff
-                    }
-                }
-            }
-
-            appUsage.put(packageName, totalTime)
-        }
-
         return appUsage
     }
 }
