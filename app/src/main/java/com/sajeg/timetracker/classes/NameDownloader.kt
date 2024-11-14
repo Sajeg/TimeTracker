@@ -21,13 +21,16 @@ class NameDownloader {
     val listURL = URL("https://files.cocaine.trade/LauncherIcons/oculus_apps.json")
 
     fun getStoreName(context: Context, packageNames: List<String>, onFinished: (List<AppEntity>) -> Unit) {
-        DatabaseManager(context).getAppNames() { names ->
+        val dbManager = DatabaseManager(context)
+        dbManager.getAppNames() { names ->
             if (names.isEmpty()) {
                 updateStoreNames(packageNames) { newNames ->
-                    DatabaseManager(context).addAppNames(newNames)
+                    dbManager.addAppNames(newNames)
+                    dbManager.close()
                     onFinished(newNames)
                 }
             } else {
+                dbManager.close()
                 onFinished(names)
             }
         }

@@ -89,13 +89,16 @@ class UsageStatsFetcher(val context: Context) {
                 }
             }
             SettingsManager(context).saveLong("last_scan", endTime)
-            DatabaseManager(context).addEvent(*eventEntities.toTypedArray())
+            val dbManager = DatabaseManager(context)
+            dbManager.addEvent(*eventEntities.toTypedArray())
+            dbManager.close()
         }
     }
 
     fun getTotalPlaytime(packageName: String, onResponse: (time: kotlin.Long) -> Unit) {
         var totalPlayTime = 0L
-        DatabaseManager(context).getAppEvents(packageName) { events ->
+        val dbManager = DatabaseManager(context)
+        dbManager.getAppEvents(packageName) { events ->
             events.forEach { event ->
                 totalPlayTime += event.timeDiff
             }
@@ -103,8 +106,14 @@ class UsageStatsFetcher(val context: Context) {
         }
     }
 
-    fun getHourlyDayAppUsage(packageName: String, year: Int, month: Int, day: Int): PlottingData {
-        val output = HashMap<Int, Long>()
+    fun getHourlyDayAppUsage(
+        packageName: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        onResponse: (PlottingData) -> Unit
+    ){
+        val output = HashMap<Long, Long>()
         val userZoneId = ZoneId.systemDefault()
         val userZoneOffset = ZonedDateTime.now(userZoneId).offset
         val startTime = LocalDateTime.of(year, month, day, 0, 0, 0).toEpochSecond(userZoneOffset)
@@ -113,25 +122,30 @@ class UsageStatsFetcher(val context: Context) {
         Log.d("StartTime", startTime.toString())
         output.put(0, 0L)
         for (hourOfTime in 1..24) {
-            var usageTime = getUsageStats(
-                startTime + (3600) * (hourOfTime - 1),
-                startTime + (3600) * hourOfTime
-            )
-            val appUsed = usageTime.get(packageName)
-            minutesList.add(appUsed?.div(60) ?: 0)
-            hoursList.add(hourOfTime.toLong())
-            Log.d("StartTimeMinutes", minutesList.toString())
+            getUsageStats(
+                (startTime + (3600 * (hourOfTime - 1))) * 1000,
+                (startTime + (3600 * hourOfTime)) * 1000
+            ) { usageTime ->
+                val appUsed = usageTime[packageName]
+                output.put(hourOfTime.toLong(), appUsed?.div(60 * 1000) ?: 0)
+                minutesList.add(appUsed?.div(60 * 1000) ?: 0)
+                hoursList.add(hourOfTime.toLong())
+                if (output.size == 24) {
+                    onResponse(PlottingData(output.keys.toList(), output.values.toList()))
+                }
+            }
         }
-
-        return PlottingData(hoursList, minutesList)
     }
 
-    fun getUsageStats(startTime: Long, endTime: Long): HashMap<String, Long> {
+    fun getUsageStats(
+        startTime: Long,
+        endTime: Long,
+        result: (appUsage: HashMap<String, Long>) -> Unit
+    ) {
         val appUsage = HashMap<String, Long>()
-        Log.d("SQLQuery", "SELECT * FROM evententity WHERE start_time > $startTime AND start_time < $endTime OR end_time < $endTime AND end_time > $startTime")
-        DatabaseManager(context).getEvents(startTime * 1000, endTime * 1000) { events ->
+        val database = DatabaseManager(context)
+        database.getEvents(startTime, endTime) { events ->
             events.forEach { event ->
-                Log.d("EventSorter", "start: $startTime event: ${event.startTime} end: $endTime event: ${event.endTime}")
                 if (event.startTime < startTime && event.endTime > endTime) {
                     appUsage.merge(event.packageName, (endTime - startTime), Long::plus)
                 } else if (event.startTime < startTime) {
@@ -141,9 +155,9 @@ class UsageStatsFetcher(val context: Context) {
                 } else {
                     appUsage.merge(event.packageName, event.timeDiff, Long::plus)
                 }
-                Log.d("EventSorterMap", appUsage.toString())
             }
+            result(appUsage)
+            database.close()
         }
-        return appUsage
     }
 }

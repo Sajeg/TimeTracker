@@ -43,4 +43,8 @@ class DatabaseManager(context: Context) {
             onResponse(dao.getEvents(startTime, endTime))
         }
     }
+
+    fun close() {
+        db.close()
+    }
 }

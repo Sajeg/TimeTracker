@@ -1,5 +1,6 @@
 package com.sajeg.timetracker.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,9 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +37,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
+import com.sajeg.timetracker.classes.PlottingData
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.Plot
 import java.time.LocalDate
@@ -44,18 +49,34 @@ fun DetailScreen(navController: NavController, packageName: String) {
     val context = LocalContext.current
     val today = LocalDate.now()
     val lastWeek = LocalDate.now().minusWeeks(1)
-    val usageDataHourly = UsageStatsFetcher(context).getHourlyDayAppUsage(
-        packageName = packageName,
-        year = today.year,
-        month = today.month.value,
-        day = today.dayOfMonth
-    )
-//    val usageDataHourlyYesterday = UsageStatsFetcher(context).getHourlyDayAppUsage(
-//        packageName = packageName,
-//        year = lastWeek.year,
-//        month = lastWeek.month.value,
-//        day = lastWeek.dayOfMonth
-//    )
+    var usageDataHourly = remember { mutableStateOf<PlottingData?>(null) }
+    var lastWeekDataHourly = remember { mutableStateOf<PlottingData?>(null) }
+    if (usageDataHourly.value == null) {
+        LaunchedEffect(usageDataHourly.value) {
+            UsageStatsFetcher(context)
+                .getHourlyDayAppUsage(
+                    packageName = packageName,
+                    year = today.year,
+                    month = today.month.value,
+                    day = today.dayOfMonth
+                ) {
+                    usageDataHourly.value = it
+                }
+        }
+    }
+    if (lastWeekDataHourly.value == null) {
+        LaunchedEffect(lastWeekDataHourly.value) {
+            UsageStatsFetcher(context)
+                .getHourlyDayAppUsage(
+                    packageName = packageName,
+                    year = lastWeek.year,
+                    month = lastWeek.month.value,
+                    day = lastWeek.dayOfMonth
+                ) {
+                    lastWeekDataHourly.value = it
+                }
+        }
+    }
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
@@ -108,11 +129,12 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         )
                         .weight(0.5f)
                 ) {
-                    Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly)
+                    if (usageDataHourly.value != null) {
+                        Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly.value!!, lastWeekDataHourly.value!!)
+                    }
                 }
             }
-            Row(
-            ) {
+            Row {
 
                 var text = buildAnnotatedString {
                     append("In the past week you played ")
@@ -131,14 +153,17 @@ fun DetailScreen(navController: NavController, packageName: String) {
                 }
                 Text(text, fontSize = 28.sp, color = MaterialTheme.colorScheme.onBackground)
             }
-            Row (
+            Row(
                 modifier = Modifier
                     .padding(vertical = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
-            ){
+            ) {
                 Box(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(15.dp))
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(15.dp)
+                        )
                         .padding(15.dp)
                 ) {
                     Column {
@@ -166,7 +191,10 @@ fun DetailScreen(navController: NavController, packageName: String) {
                 }
                 Box(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(15.dp))
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(15.dp)
+                        )
                         .padding(15.dp)
                 ) {
                     Column {
