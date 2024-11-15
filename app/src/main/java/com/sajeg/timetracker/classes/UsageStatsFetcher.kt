@@ -131,7 +131,7 @@ class UsageStatsFetcher(val context: Context) {
                 minutesList.add(appUsed?.div(60 * 1000) ?: 0)
                 hoursList.add(hourOfTime.toLong())
                 if (output.size == 24) {
-                    onResponse(PlottingData(output.keys.toList(), output.values.toList()))
+                    onResponse(PlottingData(output.keys, output.values))
                 }
             }
         }

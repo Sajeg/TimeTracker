@@ -129,7 +129,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         )
                         .weight(0.5f)
                 ) {
-                    if (usageDataHourly.value != null) {
+                    if (usageDataHourly.value != null && lastWeekDataHourly.value != null) {
                         Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly.value!!, lastWeekDataHourly.value!!)
                     }
                 }
