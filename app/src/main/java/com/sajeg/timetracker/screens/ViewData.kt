@@ -102,10 +102,6 @@ fun LeftPart(modifier: Modifier) {
         modifier = modifier
     ) {
 //        PieChart(Modifier.fillMaxSize(), PieChartPlottingData("org.sajeg.timetracker", 485))
-        Button(
-            { UsageStatsFetcher(context).updateDatabase() },
-            modifier = Modifier.padding(100.dp)
-        ) { Text("Update DB") }
     }
 }
 

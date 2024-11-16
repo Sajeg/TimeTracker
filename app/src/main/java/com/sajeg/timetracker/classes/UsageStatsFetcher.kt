@@ -23,7 +23,7 @@ class UsageStatsFetcher(val context: Context) {
         return usageStatsList
     }
 
-    fun updateDatabase() {
+    fun updateDatabase(done: () -> Unit) {
         SettingsManager(context).readLong("last_scan") { startTime ->
             val endTime = System.currentTimeMillis()
             var usageEvents = usageStatsManager.queryEvents(startTime, endTime)
@@ -86,12 +86,15 @@ class UsageStatsFetcher(val context: Context) {
                             )
                         )
                     }
+                    Log.d("EventScanner", "new event")
                 }
             }
             SettingsManager(context).saveLong("last_scan", endTime)
+            Log.d("EventScanner", "Done")
             val dbManager = DatabaseManager(context)
             dbManager.addEvent(*eventEntities.toTypedArray())
             dbManager.close()
+            done()
         }
     }
 
