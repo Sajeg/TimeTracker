@@ -1,5 +1,7 @@
 package com.sajeg.timetracker.database
 
+import android.annotation.SuppressLint
+import android.database.Cursor
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -20,6 +22,15 @@ interface Dao {
     @Query("SELECT * FROM evententity WHERE (start_time > :startTime AND start_time < :endTime) OR (end_time < :endTime AND end_time > :startTime)")
     fun getEvents(startTime: Long, endTime: Long): List<EventEntity>
 
+    @Query("SELECT package_name, SUM(time_diff) AS total_time_diff " +
+            "FROM evententity " +
+            "WHERE (start_time > :startTime " +
+            "AND start_time < :endTime) " +
+            "OR (end_time < :endTime " +
+            "AND end_time > :startTime) " +
+            "GROUP BY package_name")
+    fun getPlaytime(startTime: Long, endTime: Long): Cursor
+
     @Insert
     fun newEvent(vararg entity: EventEntity)
 
@@ -28,8 +39,6 @@ interface Dao {
 
     @Update
     fun updateAppName(entity: AppEntity)
-
-
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun addAppNames(vararg entity: AppEntity)

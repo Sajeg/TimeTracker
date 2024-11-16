@@ -1,6 +1,8 @@
 package com.sajeg.timetracker.classes
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.database.Cursor
 import androidx.room.Room
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.Database
@@ -44,7 +46,27 @@ class DatabaseManager(context: Context) {
         }
     }
 
+    fun getPlaytime(startTime: Long, endTime: Long, onResponse: (HashMap<String, Long>) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val cursor = dao.getPlaytime(startTime, endTime)
+            onResponse(cursor.toHashMap())
+        }
+    }
+
     fun close() {
         db.close()
+    }
+
+    @SuppressLint("Range")
+    fun Cursor.toHashMap(): HashMap<String, Long> {
+        val hashMap = HashMap<String, Long>()
+        if (this.moveToFirst()) {
+            do {
+                val packageName = this.getString(this.getColumnIndex("package_name"))
+                val totalTimeDiff = this.getLong(this.getColumnIndex("total_time_diff"))
+                hashMap[packageName] = totalTimeDiff
+            } while (this.moveToNext())
+        }
+        return hashMap
     }
 }
