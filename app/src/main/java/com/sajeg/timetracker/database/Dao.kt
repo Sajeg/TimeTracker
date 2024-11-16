@@ -34,7 +34,7 @@ interface Dao {
     @Insert
     fun newEvent(vararg entity: EventEntity)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     fun newApp(entity: AppEntity)
 
     @Update

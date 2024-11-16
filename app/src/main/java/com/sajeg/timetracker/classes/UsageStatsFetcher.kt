@@ -6,6 +6,7 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import com.sajeg.timetracker.composables.isValidApp
+import com.sajeg.timetracker.database.DatabaseManager
 import com.sajeg.timetracker.database.EventEntity
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -14,14 +15,6 @@ import java.time.ZonedDateTime
 class UsageStatsFetcher(val context: Context) {
     val usageStatsManager =
         context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-    fun getUsedApps(startTime: Long, endTime: Long): List<UsageStats> {
-        val usageStatsList = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_BEST, startTime, endTime
-        )
-
-        return usageStatsList
-    }
 
     fun updateDatabase(done: () -> Unit) {
         SettingsManager(context).readLong("last_scan") { startTime ->

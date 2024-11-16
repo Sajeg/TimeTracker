@@ -6,6 +6,6 @@ data class PlottingData(
 )
 
 data class PieChartPlottingData(
-    val packageName: String,
-    val amount: Int
+    val displayName: String,
+    val amount: Long
 )

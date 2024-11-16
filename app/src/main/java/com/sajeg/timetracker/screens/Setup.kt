@@ -14,15 +14,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat.startActivity
 import androidx.navigation.NavController
 import com.sajeg.timetracker.ViewData
+import com.sajeg.timetracker.classes.NameDownloader
 import com.sajeg.timetracker.classes.UsageStatsFetcher
+import com.sajeg.timetracker.composables.getInstalledVrGames
+import com.sajeg.timetracker.database.AppEntity
+import com.sajeg.timetracker.database.DatabaseManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,7 +49,6 @@ fun Setup(navController: NavController) {
     )
     if (usageStatsList.isEmpty()) {
         context.startActivity(intent, null)
-        ScanEvents(navController)
     } else {
         ScanEvents(navController)
     }
@@ -53,8 +58,24 @@ fun Setup(navController: NavController) {
 fun ScanEvents(navController: NavController) {
     val context = LocalContext.current
     val scanning = remember { mutableStateOf(true) }
+    val apps = getInstalledVrGames(context)
+    val packageNames = mutableListOf<String>()
+    apps.forEach { app ->
+        packageNames.add(app.packageName)
+    }
 
     LaunchedEffect(scanning) {
+        NameDownloader().getStoreName(context, packageNames) { storeNames ->
+            val dbManager = DatabaseManager(context)
+            for(app in packageNames) {
+                if (storeNames.find { it.packageName == app} == null) {
+                    val packageManager = context.packageManager
+                    val appInfo = packageManager.getApplicationInfo(app, 0)
+                    val name = packageManager.getApplicationLabel(appInfo).toString()
+                    dbManager.addAppNames(listOf(AppEntity(app, name)))
+                }
+            }
+        }
         UsageStatsFetcher(context).updateDatabase() {
             scanning.value = false
             CoroutineScope(Dispatchers.Main).launch {

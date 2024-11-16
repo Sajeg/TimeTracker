@@ -1,12 +1,9 @@
-package com.sajeg.timetracker.classes
+package com.sajeg.timetracker.database
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.database.Cursor
 import androidx.room.Room
-import com.sajeg.timetracker.database.AppEntity
-import com.sajeg.timetracker.database.Database
-import com.sajeg.timetracker.database.EventEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -40,10 +41,12 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
-import com.sajeg.timetracker.classes.DatabaseManager
-import com.sajeg.timetracker.classes.UsageStatsFetcher
+import com.sajeg.timetracker.classes.PieChartPlottingData
+import com.sajeg.timetracker.classes.PlottingData
+import com.sajeg.timetracker.composables.PieChart
 import com.sajeg.timetracker.composables.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
+import com.sajeg.timetracker.database.DatabaseManager
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -98,10 +101,50 @@ fun ViewData(navController: NavController) {
 @Composable
 fun LeftPart(modifier: Modifier) {
     val context = LocalContext.current
+    val dbManager = DatabaseManager(context)
+    val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
+    val today = LocalDate.now()
+    val startTime =
+        LocalDateTime.of(today.year, today.month.value, today.dayOfMonth, 0, 0, 0)
+            .toEpochSecond(userZoneOffset)
+    var usage = remember { mutableStateListOf<PieChartPlottingData>() }
+    var appNames = remember { mutableStateListOf<AppEntity>() }
+    if (usage.isEmpty() && appNames.isEmpty()) {
+        LaunchedEffect(usage) {
+            dbManager.getAppNames { names ->
+                dbManager.getPlaytime(startTime, System.currentTimeMillis()) { playtime ->
+                    usage.clear()
+                    playtime.forEach { app ->
+                        val name = names.find { it.packageName == app.key }?.displayName ?: ""
+                        usage.add(PieChartPlottingData(name, app.value))
+                    }
+                }
+            }
+        }
+    }
     Column(
         modifier = modifier
     ) {
-//        PieChart(Modifier.fillMaxSize(), PieChartPlottingData("org.sajeg.timetracker", 485))
+        PieChart(
+            Modifier.fillMaxHeight(0.5f),
+            *usage.toTypedArray()
+        )
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(end = 40.dp, bottom = 40.dp)
+        ) {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text("I don't know what to put here")
+                Text("Seriously?")
+                Text("Yeah \uD83D\uDE44")
+            }
+        }
     }
 }
 
@@ -130,7 +173,9 @@ fun RightPart(modifier: Modifier) {
             val dbManager = DatabaseManager(context)
             val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
             val lastWeek = LocalDate.now().minusWeeks(1)
-            val startTime = LocalDateTime.of(lastWeek.year, lastWeek.month, lastWeek.dayOfMonth, 0, 0, 0).toEpochSecond(userZoneOffset)
+            val startTime =
+                LocalDateTime.of(lastWeek.year, lastWeek.month, lastWeek.dayOfMonth, 0, 0, 0)
+                    .toEpochSecond(userZoneOffset)
             dbManager.getPlaytime(startTime, System.currentTimeMillis()) { events ->
                 usageWeek.clear()
                 events.forEach { event ->
@@ -170,9 +215,8 @@ fun RightPart(modifier: Modifier) {
                         if (packageName == null) {
                             return@itemsIndexed
                         }
-                        val appInfo = packageManager.getApplicationInfo(packageName, 0)
                         val name = appNames.find { it.packageName == packageName }?.displayName
-                            ?: packageManager.getApplicationLabel(appInfo).toString()
+                            ?: ""
                         ListItem(
                             modifier,
                             packageName,
@@ -190,7 +234,7 @@ fun RightPart(modifier: Modifier) {
             )
             LazyColumn {
                 itemsIndexed(usageAllTime.toList()
-                        .sortedByDescending { it.second }) { index, (packageName, timeDiff) ->
+                    .sortedByDescending { it.second }) { index, (packageName, timeDiff) ->
                     if (packageName == null) {
                         return@itemsIndexed
                     }

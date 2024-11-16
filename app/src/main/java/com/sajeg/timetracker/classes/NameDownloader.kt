@@ -3,6 +3,7 @@ package com.sajeg.timetracker.classes
 import android.content.Context
 import android.util.JsonReader
 import com.sajeg.timetracker.database.AppEntity
+import com.sajeg.timetracker.database.DatabaseManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,18 +21,17 @@ data class AppName(val packageName: String, var name: String) {
 class NameDownloader {
     val listURL = URL("https://files.cocaine.trade/LauncherIcons/oculus_apps.json")
 
-    fun getStoreName(context: Context, packageNames: List<String>, onFinished: (List<AppEntity>) -> Unit) {
+    fun getStoreName(
+        context: Context,
+        packageNames: List<String>,
+        onFinished: (List<AppEntity>) -> Unit
+    ) {
         val dbManager = DatabaseManager(context)
         dbManager.getAppNames() { names ->
-            if (names.isEmpty()) {
-                updateStoreNames(packageNames) { newNames ->
-                    dbManager.addAppNames(newNames)
-                    dbManager.close()
-                    onFinished(newNames)
-                }
-            } else {
+            updateStoreNames(packageNames) { newNames ->
+                dbManager.addAppNames(newNames)
                 dbManager.close()
-                onFinished(names)
+                onFinished(newNames)
             }
         }
     }

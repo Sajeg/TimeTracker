@@ -41,8 +41,6 @@ import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
-import com.sajeg.timetracker.classes.AppName
-import com.sajeg.timetracker.classes.DatabaseManager
 import com.sajeg.timetracker.classes.NameDownloader
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.getInstalledVrGames
@@ -93,11 +91,6 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val packageNames = mutableListOf<String>()
     apps.forEach { app ->
         packageNames.add(app.packageName)
-    }
-    LaunchedEffect(storeNames) {
-        NameDownloader().getStoreName(context, packageNames) {
-            storeNames = it.toMutableStateList()
-        }
     }
 
     LazyVerticalGrid(
