@@ -1,6 +1,5 @@
 package com.sajeg.timetracker.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,10 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -34,9 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.sajeg.timetracker.AppOverview
-import com.sajeg.timetracker.R
-import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.PlottingData
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.Plot
@@ -80,28 +72,6 @@ fun DetailScreen(navController: NavController, packageName: String) {
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
-        NavigationRail {
-            NavigationRailItem(
-                selected = false,
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.hourglass),
-                        contentDescription = ""
-                    )
-                },
-                onClick = { navController.navigate(ViewData) }
-            )
-            NavigationRailItem(
-                selected = false,
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.apps),
-                        contentDescription = ""
-                    )
-                },
-                onClick = { navController.navigate(AppOverview) }
-            )
-        }
         Column {
             Row(
                 modifier = Modifier
@@ -130,7 +100,12 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         .weight(0.5f)
                 ) {
                     if (usageDataHourly.value != null && lastWeekDataHourly.value != null) {
-                        Plot(Modifier.padding(10.dp), 0.4f, usageDataHourly.value!!, lastWeekDataHourly.value!!)
+                        Plot(
+                            Modifier.padding(10.dp),
+                            0.4f,
+                            usageDataHourly.value!!,
+                            lastWeekDataHourly.value!!
+                        )
                     }
                 }
             }

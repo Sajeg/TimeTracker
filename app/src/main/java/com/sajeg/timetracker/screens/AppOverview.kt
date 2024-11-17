@@ -15,10 +15,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,17 +28,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.GlidePreloadingData
 import com.bumptech.glide.integration.compose.placeholder
-import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
-import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.composables.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
@@ -52,28 +45,6 @@ fun AppOverview(navController: NavController) {
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
-        NavigationRail {
-            NavigationRailItem(
-                selected = currentDestination == "com.sajeg.timetracker.ViewData",
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.hourglass),
-                        contentDescription = ""
-                    )
-                },
-                onClick = { navController.navigate(ViewData) }
-            )
-            NavigationRailItem(
-                selected = currentDestination == "com.sajeg.timetracker.AppOverview",
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.apps),
-                        contentDescription = ""
-                    )
-                },
-                onClick = { navController.navigate(AppOverview) }
-            )
-        }
         AppGrid(Modifier) {
             navController.navigate(DetailScreen(it))
         }
