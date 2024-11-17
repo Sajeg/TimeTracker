@@ -1,5 +1,6 @@
 package com.sajeg.timetracker.composables
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -47,10 +49,11 @@ fun PieChart(modifier: Modifier, vararg data: PieChartPlottingData) {
 
                 val radius = 600f / 2f
                 val middleAngle = (startAngle + sweepAngle / 2) * (Math.PI / 180f)
-                val x = center.x + (radius * 0.8f * cos(middleAngle)).toFloat()
-                val y = center.y + (radius * 0.8f * sin(middleAngle)).toFloat()
+                val x = center.x + (radius * 0.4f * cos(middleAngle)).toFloat()
+                val y = center.y + (radius * 0.4f * sin(middleAngle)).toFloat()
                 if (i < 4 && sweepAngle > 20) {
                     val textSize = textMeasurer.measure(usage.displayName).size
+                    Log.d("PIE", "App: ${usage.displayName} with ${millisecondsToTimeString(usage.amount)}")
                     drawArc(
                         color = colors[i],
                         startAngle = startAngle,

@@ -2,6 +2,7 @@ package com.sajeg.timetracker.screens
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -39,10 +38,10 @@ import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.sajeg.timetracker.AppOverview
+import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.PieChartPlottingData
-import com.sajeg.timetracker.classes.PlottingData
 import com.sajeg.timetracker.composables.PieChart
 import com.sajeg.timetracker.composables.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
@@ -94,7 +93,9 @@ fun ViewData(navController: NavController) {
         RightPart(
             Modifier
                 .fillMaxHeight()
-        )
+        ) {
+            navController.navigate(DetailScreen(it))
+        }
     }
 }
 
@@ -112,7 +113,7 @@ fun LeftPart(modifier: Modifier) {
     if (usage.isEmpty() && appNames.isEmpty()) {
         LaunchedEffect(usage) {
             dbManager.getAppNames { names ->
-                dbManager.getPlaytime(startTime, System.currentTimeMillis()) { playtime ->
+                dbManager.getPlaytime(startTime * 1000, System.currentTimeMillis()) { playtime ->
                     usage.clear()
                     playtime.forEach { app ->
                         val name = names.find { it.packageName == app.key }?.displayName ?: ""
@@ -150,7 +151,7 @@ fun LeftPart(modifier: Modifier) {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun RightPart(modifier: Modifier) {
+fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
     var usageAllTime = remember { mutableMapOf<String?, Long>() }
     var usageWeek = remember { mutableMapOf<String?, Long>() }
     var appNames = remember { mutableStateListOf<AppEntity>() }
@@ -176,7 +177,7 @@ fun RightPart(modifier: Modifier) {
             val startTime =
                 LocalDateTime.of(lastWeek.year, lastWeek.month, lastWeek.dayOfMonth, 0, 0, 0)
                     .toEpochSecond(userZoneOffset)
-            dbManager.getPlaytime(startTime, System.currentTimeMillis()) { events ->
+            dbManager.getPlaytime(startTime * 1000, System.currentTimeMillis()) { events ->
                 usageWeek.clear()
                 events.forEach { event ->
                     usageWeek.put(event.key, event.value)
@@ -222,7 +223,7 @@ fun RightPart(modifier: Modifier) {
                             packageName,
                             name,
                             timeDiff
-                        )
+                        ) { onClick(it) }
                     }
                 }
             }
@@ -246,7 +247,7 @@ fun RightPart(modifier: Modifier) {
                         packageName,
                         name,
                         timeDiff
-                    )
+                    ) { onClick(it) }
                 }
             }
         }
@@ -255,11 +256,18 @@ fun RightPart(modifier: Modifier) {
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-private fun ListItem(modifier: Modifier, packageName: String, displayName: String, usage: Long) {
+private fun ListItem(
+    modifier: Modifier,
+    packageName: String,
+    displayName: String,
+    usage: Long,
+    onClick: (packageName: String) -> Unit
+) {
     Card(
         modifier = Modifier
             .padding(5.dp)
             .height(75.dp)
+            .clickable { onClick(packageName) }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(0.75f)
