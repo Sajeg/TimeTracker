@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp") version "2.0.21-1.0.25"
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -41,10 +42,14 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
+    // HttpRequests
+    implementation(libs.okhttp)
+
     //Datastore
     implementation(libs.androidx.datastore.preferences)
 

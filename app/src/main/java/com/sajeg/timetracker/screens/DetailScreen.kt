@@ -1,6 +1,5 @@
 package com.sajeg.timetracker.screens
 
-import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -32,7 +35,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.sajeg.timetracker.AppOverview
+import com.sajeg.timetracker.R
+import com.sajeg.timetracker.Settings
 import com.sajeg.timetracker.classes.PlottingData
+import com.sajeg.timetracker.classes.SettingsManager
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.Plot
 import com.sajeg.timetracker.convertEpochToDate
@@ -50,15 +57,21 @@ fun DetailScreen(navController: NavController, packageName: String) {
     navController.context
     val context = LocalContext.current
     val today = LocalDate.now()
-    val lastWeek = LocalDate.now().minusWeeks(1)
     var name = remember { mutableStateOf("") }
     var usageDataHourly = remember { mutableStateOf<PlottingData?>(null) }
-    var lastWeekDataHourly = remember { mutableStateOf<PlottingData?>(null) }
     val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
     val events = remember { mutableStateOf<List<EventEntity>>(listOf()) }
     val totalPlaytime = remember { mutableLongStateOf(0L) }
     val lastWeekTotalPlaytime = remember { mutableLongStateOf(0L) }
     val lastWeekAllGamesPlaytime = remember { mutableLongStateOf(-1L) }
+    val usFormat = remember { mutableStateOf(false) }
+    val currentDestination = navController.currentDestination?.route
+
+    LaunchedEffect(Unit) {
+        SettingsManager(context).readInt("time_format") {
+            usFormat.value = it == 1
+        }
+    }
 
     if (usageDataHourly.value == null) {
         LaunchedEffect(usageDataHourly.value) {
@@ -73,19 +86,6 @@ fun DetailScreen(navController: NavController, packageName: String) {
                 }
         }
     }
-//    if (lastWeekDataHourly.value == null) {
-//        LaunchedEffect(lastWeekDataHourly.value) {
-//            UsageStatsFetcher(context)
-//                .getHourlyDayAppUsage(
-//                    packageName = packageName,
-//                    year = lastWeek.year,
-//                    month = lastWeek.month.value,
-//                    day = lastWeek.dayOfMonth
-//                ) {
-//                    lastWeekDataHourly.value = it
-//                }
-//        }
-//    }
     if (name.value == "") {
         val dbManager = DatabaseManager(context)
         dbManager.getAppNames { names ->
@@ -124,10 +124,33 @@ fun DetailScreen(navController: NavController, packageName: String) {
     Row(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
-            .padding(10.dp)
             .fillMaxSize()
     ) {
-        Column {
+        NavigationRail {
+            NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.AppOverview",
+                icon = {
+                    Icon(
+                        painter = painterResource(com.sajeg.timetracker.R.drawable.apps),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(AppOverview) }
+            )
+            NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.Settings",
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.settings),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(Settings) }
+            )
+        }
+        Column (
+            modifier = Modifier.padding(15.dp)
+        ){
             Row(
                 modifier = Modifier
                     .padding(vertical = 30.dp)
@@ -203,7 +226,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
                     ) {
                         Column {
                             Text(
-                            "Since ${convertEpochToDate(events.value[0].startTime)} \nyou " +
+                            "Since ${convertEpochToDate(events.value[0].startTime, usFormat.value)} \nyou " +
                                     "played ${millisecondsToTimeString(totalPlaytime.longValue)}",
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontSize = 28.sp,
@@ -221,7 +244,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
                     ) {
                         Column {
                             Text(
-                                "You played it the \nlast time on \n${convertEpochToDate(events.value.last().endTime)}",
+                                "You played it the \nlast time on \n${convertEpochToDate(events.value.last().endTime, usFormat.value)}",
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 fontSize = 28.sp,
                                 lineHeight = 32.sp

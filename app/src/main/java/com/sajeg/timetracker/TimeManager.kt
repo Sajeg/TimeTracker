@@ -5,10 +5,14 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-fun convertEpochToDate(epoch: Long): String {
+fun convertEpochToDate(epoch: Long, usFormat: Boolean = false): String {
     val instant = Instant.ofEpochMilli(epoch)
     val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
-    val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val formatter = if (usFormat) {
+        DateTimeFormatter.ofPattern("MM/dd/yyyy")
+    } else {
+        DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    }
     return dateTime.format(formatter)
 }
 

@@ -9,5 +9,6 @@ plugins {
 buildscript {
     dependencies {
         classpath(libs.kotlin.serialization)
+        classpath(libs.secrets.gradle.plugin)
     }
 }

@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.sajeg.timetracker.screens.AppOverview
 import com.sajeg.timetracker.screens.DetailScreen
+import com.sajeg.timetracker.screens.Settings
 import com.sajeg.timetracker.screens.Setup
 import com.sajeg.timetracker.screens.ViewData
 import kotlinx.serialization.Serializable
@@ -30,6 +31,9 @@ fun SetupNavGraph(
         composable<AppOverview> {
             AppOverview(navController)
         }
+        composable<Settings> {
+            Settings(navController)
+        }
     }
 }
 
@@ -46,4 +50,7 @@ data class DetailScreen(
 
 @Serializable
 object AppOverview
+
+@Serializable
+object Settings
 

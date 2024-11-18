@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -46,8 +48,11 @@ import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
+import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
+import com.sajeg.timetracker.Settings
+import com.sajeg.timetracker.classes.SettingsManager
 import com.sajeg.timetracker.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
@@ -62,6 +67,28 @@ fun AppOverview(navController: NavController) {
     Row(
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
+        NavigationRail {
+            NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.AppOverview",
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.apps),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(AppOverview) }
+            )
+            NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.Settings",
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.settings),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(Settings) }
+            )
+        }
         AppGrid(Modifier) {
             navController.navigate(DetailScreen(it))
         }
@@ -81,6 +108,13 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val timeText = remember { mutableStateOf("Today") }
     val sortOptions = listOf("A-Z", "Z-A", "Playtime")
     val timeFrameOptions = listOf("Day", "Week", "Month", "All time")
+    val usFormat = remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        SettingsManager(context).readInt("time_format") {
+            usFormat.value = it == 1
+        }
+    }
 
     if (storeNames.isEmpty()) {
         LaunchedEffect(storeNames) {
@@ -92,7 +126,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         }
     }
     LaunchedEffect(Unit) {
-        calculateDate(time.intValue, timeOffset.longValue) { startTime, endTime, text ->
+        calculateDate(time.intValue, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
             val dbManager = DatabaseManager(context)
             dbManager.getPlaytime(startTime, endTime) { events ->
                 playtimeMap.clear()
@@ -132,7 +166,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                         onClick = {
                             time.intValue = index
                             timeOffset.longValue = 0L
-                            calculateDate(index, timeOffset.longValue) { startTime, endTime, text ->
+                            calculateDate(index, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
                                 val dbManager = DatabaseManager(context)
                                 dbManager.getPlaytime(startTime, endTime) { events ->
                                     playtimeMap.clear()
@@ -153,7 +187,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                 modifier = Modifier.padding(horizontal = 15.dp),
                 onClick = {
                     timeOffset.longValue += 1
-                    calculateDate(time.intValue, timeOffset.longValue) { startTime, endTime, text ->
+                    calculateDate(time.intValue, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
                         val dbManager = DatabaseManager(context)
                         dbManager.getPlaytime(startTime, endTime) { events ->
                             playtimeMap.clear()
@@ -190,7 +224,8 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                         }
                         calculateDate(
                             time.intValue,
-                            timeOffset.longValue
+                            timeOffset.longValue,
+                            usFormat.value
                         ) { startTime, endTime, text ->
                             val dbManager = DatabaseManager(context)
                             dbManager.getPlaytime(startTime, endTime) { events ->
@@ -251,6 +286,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
 fun calculateDate(
     selected: Int,
     timeOffset: Long,
+    usFormat: Boolean,
     newDate: (startDate: Long, endDate: Long, text: String) -> Unit
 ) {
     val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
@@ -262,21 +298,36 @@ fun calculateDate(
     if (selected == 0) {
         startDay = startDay.minusDays(timeOffset)
         endDay = endDay.minusDays(timeOffset)
-        text = "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}"
+        text = if (usFormat) {
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}"
+        } else {
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}"
+        }
     } else if (selected == 1) {
         startDay = startDay.minusWeeks(timeOffset + 1)
         endDay = endDay.minusWeeks(timeOffset)
-        text = "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
-                " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+        text = if (usFormat) {
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}" +
+                    " - ${endDay.monthValue}/${endDay.dayOfMonth}/${endDay.year.toString().replace("20", "")}"
+        } else {
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
+                    " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+        }
     } else if (selected == 2) {
         startDay = startDay.minusMonths(timeOffset + 1)
         endDay = endDay.minusMonths(timeOffset)
-        text = "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
-                " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+        text = if (usFormat) {
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}" +
+                    " - ${endDay.monthValue}/${endDay.dayOfMonth}/${endDay.year.toString().replace("20", "")}"
+        } else {
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
+                    " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+        }
     } else if (selected == 3) {
         startDay = startDay.minusYears(20)
         text = "All time"
     }
+
     startTime = LocalDateTime
         .of(startDay.year, startDay.month.value, startDay.dayOfMonth, 0, 0, 0)
         .toEpochSecond(userZoneOffset)
