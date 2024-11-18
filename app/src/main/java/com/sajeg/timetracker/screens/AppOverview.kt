@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,12 +16,19 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -58,6 +68,10 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     var storeNames = remember { mutableStateListOf<AppEntity>() }
     val playtimeMap = remember { mutableStateMapOf<String, Long>() }
     val state = rememberLazyGridState()
+    var sort = remember { mutableIntStateOf(0) }
+    var time = remember { mutableIntStateOf(0) }
+    val sortOptions = listOf("A-Z", "Z-A", "Playtime")
+    val timeFrameOptions = listOf("Day", "Week", "Month", "All time")
 
     if (storeNames.isEmpty()) {
         LaunchedEffect(storeNames) {
@@ -80,21 +94,68 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         }
     }
     storeNames.sortBy { it.displayName }
-    LazyVerticalGrid(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 15.dp)
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 15.dp),
-        state = state,
-        columns = GridCells.Adaptive(250.dp),
-        verticalArrangement = Arrangement.spacedBy(29.dp, Alignment.Top),
-        horizontalArrangement = Arrangement.spacedBy(29.dp, Alignment.Start)
-    ) {
-        items(storeNames) { app ->
-            val playtime = playtimeMap[app.packageName] ?: 0L
-            val name = storeNames.find { it.packageName == app.packageName }?.displayName ?: ""
-            AppCard(onClick, app, name, playtime)
+    Column {
+        Row (
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 15.dp)
+                .padding(top = 25.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ){
+            SingleChoiceSegmentedButtonRow {
+                timeFrameOptions.forEachIndexed { index, label ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = timeFrameOptions.size
+                        ),
+                        onClick = { time.intValue = index },
+                        selected = index == time.intValue
+                    ) { Text(label) }
+                }
+            }
+            IconButton(modifier = Modifier.padding(horizontal = 15.dp), onClick = {}) {
+                Icon(painter = painterResource(R.drawable.back), "", tint = MaterialTheme.colorScheme.onBackground)
+            }
+            Text(
+                modifier = modifier.fillMaxWidth().weight(0.1f),
+                text = "17. November",
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.displaySmall
+            )
+            IconButton(modifier = Modifier.padding(horizontal = 15.dp), onClick = {}) {
+                Icon(painter = painterResource(R.drawable.forward), "", tint = MaterialTheme.colorScheme.onBackground)
+            }
+            SingleChoiceSegmentedButtonRow {
+                sortOptions.forEachIndexed { index, label ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = sortOptions.size
+                        ),
+                        onClick = { sort.intValue = index },
+                        selected = index == sort.intValue
+                    ) { Text(label) }
+                }
+            }
+        }
+        LazyVerticalGrid(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 15.dp)
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 15.dp),
+            state = state,
+            columns = GridCells.Adaptive(250.dp),
+            verticalArrangement = Arrangement.spacedBy(29.dp, Alignment.Top),
+            horizontalArrangement = Arrangement.spacedBy(29.dp, Alignment.Start)
+        ) {
+            items(storeNames) { app ->
+                val playtime = playtimeMap[app.packageName] ?: 0L
+                val name = storeNames.find { it.packageName == app.packageName }?.displayName ?: ""
+                AppCard(onClick, app, name, playtime)
+            }
         }
     }
 }
@@ -132,7 +193,7 @@ private fun AppCard(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(name, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+                    Text(name.trim(), style = MaterialTheme.typography.titleLarge, maxLines = 1)
                     Text(millisecondsToTimeString(playtime))
                 }
             }
