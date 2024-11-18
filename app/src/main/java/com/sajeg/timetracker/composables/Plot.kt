@@ -53,13 +53,13 @@ fun Plot(modifier: Modifier, zoom: Float, vararg data: PlottingData) {
                     )
                 ),
                 startAxis = VerticalAxis.rememberStart(
-                    itemPlacer = remember { VerticalAxis.ItemPlacer.step({ 5.0 }) },
+                    itemPlacer = remember { VerticalAxis.ItemPlacer.step({ 2.0 }) },
                     title = "Minutes played"
                 ),
                 bottomAxis =
                 HorizontalAxis.rememberBottom(
                     guideline = null,
-                    itemPlacer = remember { HorizontalAxis.ItemPlacer.aligned(3) },
+                    itemPlacer = remember { HorizontalAxis.ItemPlacer.aligned(1) },
                     title = "Time",
                 )
             ),

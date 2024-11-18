@@ -48,7 +48,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
-import com.sajeg.timetracker.composables.millisecondsToTimeString
+import com.sajeg.timetracker.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
 import java.time.LocalDate

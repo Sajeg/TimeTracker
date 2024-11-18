@@ -43,7 +43,7 @@ import com.sajeg.timetracker.R
 import com.sajeg.timetracker.ViewData
 import com.sajeg.timetracker.classes.PieChartPlottingData
 import com.sajeg.timetracker.composables.PieChart
-import com.sajeg.timetracker.composables.millisecondsToTimeString
+import com.sajeg.timetracker.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
 import java.time.LocalDate
