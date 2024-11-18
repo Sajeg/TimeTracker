@@ -57,7 +57,7 @@ class UsageStatsFetcher(val context: Context) {
                             )
                         }
                     }
-                    if (events[1].eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
+                    if (events[1].eventType == UsageEvents.Event.ACTIVITY_PAUSED || events[1].eventType == UsageEvents.Event.ACTIVITY_STOPPED) {
                         eventEntities.add(
                             EventEntity(
                                 0,
