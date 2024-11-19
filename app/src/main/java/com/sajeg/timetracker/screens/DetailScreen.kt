@@ -62,6 +62,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
     val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
     val events = remember { mutableStateOf<List<EventEntity>>(listOf()) }
     val totalPlaytime = remember { mutableLongStateOf(0L) }
+    val todayPlaytime = remember { mutableLongStateOf(0L) }
     val lastWeekTotalPlaytime = remember { mutableLongStateOf(0L) }
     val lastWeekAllGamesPlaytime = remember { mutableLongStateOf(-1L) }
     val usFormat = remember { mutableStateOf(false) }
@@ -96,12 +97,21 @@ fun DetailScreen(navController: NavController, packageName: String) {
     if (events.value.isEmpty()) {
         val dbManager = DatabaseManager(context)
         dbManager.getAppEvents(packageName) {
+            dbManager.close()
+            var todayTime = LocalDateTime
+                .of(today.year, today.month.value, today.dayOfMonth, 0, 0, 0)
+                .toEpochSecond(userZoneOffset)
+            todayTime = todayTime * 1000
             events.value = it
             events.value.sortedBy { it.startTime }
             events.value.forEach { event ->
                 totalPlaytime.value += event.timeDiff
+                if (event.startTime > todayTime) {
+                    todayPlaytime.longValue += event.timeDiff
+                } else if (event.endTime > todayTime) {
+                    todayPlaytime.longValue += event.endTime - todayTime
+                }
             }
-            dbManager.close()
         }
     }
     if (lastWeekAllGamesPlaytime.longValue == -1L) {
@@ -249,6 +259,25 @@ fun DetailScreen(navController: NavController, packageName: String) {
                                 fontSize = 28.sp,
                                 lineHeight = 32.sp
                             )
+                        }
+                    }
+                    if (todayPlaytime.longValue > 0L) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(15.dp)
+                                )
+                                .padding(15.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    "Today you played ${millisecondsToTimeString(todayPlaytime.longValue)}",
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontSize = 28.sp,
+                                    lineHeight = 32.sp
+                                )
+                            }
                         }
                     }
                 }

@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.Placeholder
+import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
@@ -394,6 +396,13 @@ private fun AppCard(
     name: String,
     playtime: Long
 ) {
+    val context = LocalContext.current
+    val packageManager = context.packageManager
+    val placeholder = try {
+        placeholder(packageManager.getApplicationIcon(app.packageName))
+    } catch (e: Exception) {
+        placeholder(R.drawable.android)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -404,7 +413,10 @@ private fun AppCard(
         GlideImage(
             model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${app.packageName}.jpg",
             contentDescription = "",
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
+            alignment = Alignment.Center,
+            failure = placeholder
         )
         Column {
             Spacer(Modifier.height(110.dp))
