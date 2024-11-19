@@ -47,15 +47,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.Settings
 import com.sajeg.timetracker.classes.SettingsManager
-import com.sajeg.timetracker.millisecondsToTimeString
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
+import com.sajeg.timetracker.millisecondsToTimeString
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -113,6 +112,28 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     LaunchedEffect(Unit) {
         SettingsManager(context).readInt("time_format") {
             usFormat.value = it == 1
+            SettingsManager(context).readInt("sort") {
+                sort.intValue = it
+            }
+            SettingsManager(context).readInt("time") {
+                time.intValue = it
+                calculateDate(
+                    time.intValue,
+                    timeOffset.longValue,
+                    usFormat.value
+                ) { startTime, endTime, text ->
+                    val dbManager = DatabaseManager(context)
+                    dbManager.getPlaytime(startTime, endTime) { events ->
+                        playtimeMap.clear()
+                        events.forEach {
+                            playtimeMap.put(it.key, it.value)
+                            Log.d("Playtime", playtimeMap.toString())
+                        }
+                        dbManager.close()
+                        timeText.value = text
+                    }
+                }
+            }
         }
     }
 
@@ -123,20 +144,6 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                 names.forEach { storeNames.add(it) }
             }
             dbManager.close()
-        }
-    }
-    LaunchedEffect(Unit) {
-        calculateDate(time.intValue, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
-            val dbManager = DatabaseManager(context)
-            dbManager.getPlaytime(startTime, endTime) { events ->
-                playtimeMap.clear()
-                events.forEach {
-                    playtimeMap.put(it.key, it.value)
-                    Log.d("Playtime", playtimeMap.toString())
-                }
-                dbManager.close()
-                timeText.value = text
-            }
         }
     }
 
@@ -156,38 +163,15 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                 .padding(top = 25.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            SingleChoiceSegmentedButtonRow {
-                timeFrameOptions.forEachIndexed { index, label ->
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = timeFrameOptions.size
-                        ),
-                        onClick = {
-                            time.intValue = index
-                            timeOffset.longValue = 0L
-                            calculateDate(index, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
-                                val dbManager = DatabaseManager(context)
-                                dbManager.getPlaytime(startTime, endTime) { events ->
-                                    playtimeMap.clear()
-                                    events.forEach {
-                                        playtimeMap.put(it.key, it.value)
-                                        Log.d("Playtime", playtimeMap.toString())
-                                    }
-                                    dbManager.close()
-                                    timeText.value = text
-                                }
-                            }
-                        },
-                        selected = index == time.intValue
-                    ) { Text(label) }
-                }
-            }
             IconButton(
                 modifier = Modifier.padding(horizontal = 15.dp),
                 onClick = {
                     timeOffset.longValue += 1
-                    calculateDate(time.intValue, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
+                    calculateDate(
+                        time.intValue,
+                        timeOffset.longValue,
+                        usFormat.value
+                    ) { startTime, endTime, text ->
                         val dbManager = DatabaseManager(context)
                         dbManager.getPlaytime(startTime, endTime) { events ->
                             playtimeMap.clear()
@@ -246,9 +230,46 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                     )
                 }
             } else {
-                Spacer(modifier = Modifier
-                    .width(77.dp)
-                    .padding(horizontal = 15.dp))
+                Spacer(
+                    modifier = Modifier
+                        .width(77.dp)
+                        .padding(horizontal = 15.dp)
+                )
+            }
+        }
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 15.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            SingleChoiceSegmentedButtonRow {
+                timeFrameOptions.forEachIndexed { index, label ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = timeFrameOptions.size
+                        ),
+                        onClick = {
+                            SettingsManager(context).saveInt("time", index)
+                            time.intValue = index
+                            timeOffset.longValue = 0L
+                            calculateDate(index, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
+                                val dbManager = DatabaseManager(context)
+                                dbManager.getPlaytime(startTime, endTime) { events ->
+                                    playtimeMap.clear()
+                                    events.forEach {
+                                        playtimeMap.put(it.key, it.value)
+                                        Log.d("Playtime", playtimeMap.toString())
+                                    }
+                                    dbManager.close()
+                                    timeText.value = text
+                                }
+                            }
+                        },
+                        selected = index == time.intValue
+                    ) { Text(label) }
+                }
             }
             SingleChoiceSegmentedButtonRow {
                 sortOptions.forEachIndexed { index, label ->
@@ -257,7 +278,10 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                             index = index,
                             count = sortOptions.size
                         ),
-                        onClick = { sort.intValue = index },
+                        onClick = {
+                            sort.intValue = index
+                            SettingsManager(context).saveInt("sort", index)
+                        },
                         selected = index == sort.intValue
                     ) { Text(label) }
                 }
@@ -299,29 +323,51 @@ fun calculateDate(
         startDay = startDay.minusDays(timeOffset)
         endDay = endDay.minusDays(timeOffset)
         text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}"
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                startDay.year.toString().replace("20", "")
+            }"
         } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}"
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                startDay.year.toString().replace("20", "")
+            }"
         }
     } else if (selected == 1) {
         startDay = startDay.minusWeeks(timeOffset + 1)
         endDay = endDay.minusWeeks(timeOffset)
+        val endDisplayDay = endDay.minusDays(1)
         text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}" +
-                    " - ${endDay.monthValue}/${endDay.dayOfMonth}/${endDay.year.toString().replace("20", "")}"
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                startDay.year.toString().replace("20", "")
+            }" +
+                    " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
+                        endDisplayDay.year.toString().replace("20", "")
+                    }"
         } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
-                    " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                startDay.year.toString().replace("20", "")
+            }" +
+                    " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
+                        endDisplayDay.year.toString().replace("20", "")
+                    }"
         }
     } else if (selected == 2) {
         startDay = startDay.minusMonths(timeOffset + 1)
         endDay = endDay.minusMonths(timeOffset)
+        val endDisplayDay = endDay.minusDays(1)
         text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${startDay.year.toString().replace("20", "")}" +
-                    " - ${endDay.monthValue}/${endDay.dayOfMonth}/${endDay.year.toString().replace("20", "")}"
+            "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                startDay.year.toString().replace("20", "")
+            }" +
+                    " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
+                        endDisplayDay.year.toString().replace("20", "")
+                    }"
         } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${startDay.year.toString().replace("20", "")}" +
-                    " - ${endDay.dayOfMonth}.${endDay.monthValue}.${endDay.year.toString().replace("20", "")}"
+            "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                startDay.year.toString().replace("20", "")
+            }" +
+                    " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
+                        endDisplayDay.year.toString().replace("20", "")
+                    }"
         }
     } else if (selected == 3) {
         startDay = startDay.minusYears(20)
@@ -359,7 +405,6 @@ private fun AppCard(
             model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${app.packageName}.jpg",
             contentDescription = "",
             contentScale = ContentScale.Crop,
-            failure = placeholder(R.drawable.apps),
         )
         Column {
             Spacer(Modifier.height(110.dp))
