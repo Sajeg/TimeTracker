@@ -3,6 +3,8 @@ package com.sajeg.timetracker.screens
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.sajeg.timetracker.AppOverview
+import com.sajeg.timetracker.Setup
 import com.sajeg.timetracker.classes.NameDownloader
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.getInstalledVrGames
@@ -31,6 +34,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun Setup(navController: NavController) {
     val context = LocalContext.current
+    val usageAccessLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
+        navController.navigate(Setup)
+    }
     val intent = Intent("android.settings.USAGE_ACCESS_SETTINGS")
     intent.setPackage("com.android.settings")
 
@@ -42,8 +48,11 @@ fun Setup(navController: NavController) {
     val usageStatsList = usageStatsManager.queryUsageStats(
         UsageStatsManager.INTERVAL_DAILY, startTime, endTime
     )
+
     if (usageStatsList.isEmpty()) {
-        context.startActivity(intent, null)
+        LaunchedEffect(Unit) {
+            usageAccessLauncher.launch(intent)
+        }
     } else {
         ScanEvents(navController)
     }
@@ -71,7 +80,7 @@ fun ScanEvents(navController: NavController) {
                 }
             }
         }
-        UsageStatsFetcher(context).updateDatabase() {
+        UsageStatsFetcher(context).updateDatabase {
             scanning.value = false
             CoroutineScope(Dispatchers.Main).launch {
                 navController.navigate(AppOverview)
