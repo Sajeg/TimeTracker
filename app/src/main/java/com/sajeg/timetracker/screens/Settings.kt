@@ -17,10 +17,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -35,7 +38,8 @@ import com.sajeg.timetracker.classes.SettingsManager
 fun Settings(navController: NavController) {
     val context = LocalContext.current
     val timeFormat = remember { mutableIntStateOf(-1) }
-    var message = remember { mutableStateOf("") }
+    var message by remember { mutableStateOf("") }
+    var messageSend by remember { mutableStateOf(false) }
     val currentDestination = navController.currentDestination?.route
     if (timeFormat.intValue == -1) {
         SettingsManager(context).readInt("time_format") { timeFormat.intValue = it }
@@ -96,22 +100,34 @@ fun Settings(navController: NavController) {
                 modifier = Modifier.padding(horizontal = 15.dp)
             )
             TextField(
-                value = message.value,
-                onValueChange = { message.value = it },
+                value = message,
+                onValueChange = { message = it },
                 modifier = Modifier
                     .size(500.dp, 200.dp)
                     .padding(15.dp)
             )
             Button(
                 onClick = {
-                    FeedbackManager().sendDiscordMessage(message.value)
-                    message.value = ""
+                    FeedbackManager().sendDiscordMessage(message)
+                    message = ""
+                    messageSend = true
                 },
                 modifier = Modifier.padding(horizontal = 15.dp)
             ) {
                 Text("Send Feedback to the Developer")
             }
-
+            if (messageSend) {
+                Text(
+                    "Thank you for sending me feedback",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 15.dp),
+                    color = Color(
+                        0xFF07E50B
+                    )
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }
