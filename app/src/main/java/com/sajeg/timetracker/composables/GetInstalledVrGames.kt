@@ -54,9 +54,13 @@ fun isValidApp(packageName: String, context: Context): Boolean {
         "com.meta.environment.prod.bluehillgoldmine",
         "com.sajeg.questrpc"
     )
+    val includedMetaSystemApps = listOf(
+        "com.oculus.browser"
+    )
     if ((packageInfo.flags and ApplicationInfo.FLAG_SYSTEM) == 0 &&
         (packageInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0 &&
-        !excludedMetaSystemApps.contains(packageInfo.packageName)
+        !excludedMetaSystemApps.contains(packageInfo.packageName) ||
+        includedMetaSystemApps.contains(packageInfo.packageName)
     ) {
         return true
     }
