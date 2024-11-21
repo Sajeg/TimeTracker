@@ -50,6 +50,12 @@ class DatabaseManager(context: Context) {
         }
     }
 
+    fun deleteAppData(packageName: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.deleteEventByName(packageName)
+        }
+    }
+
     fun close() {
         db.close()
     }

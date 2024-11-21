@@ -3,6 +3,7 @@ package com.sajeg.timetracker.database
 import android.annotation.SuppressLint
 import android.database.Cursor
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -42,4 +43,7 @@ interface Dao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun addAppNames(vararg entity: AppEntity)
+
+    @Query("DELETE FROM evententity WHERE package_name = :packageName")
+    fun deleteEventByName(packageName: String)
 }
