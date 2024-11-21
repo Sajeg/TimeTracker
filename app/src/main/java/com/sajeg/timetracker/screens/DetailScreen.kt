@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.R
 import com.sajeg.timetracker.Settings
@@ -78,6 +79,13 @@ fun DetailScreen(navController: NavController, packageName: String) {
     var usFormat by remember { mutableStateOf(false) }
     var deleteWarningShown by remember { mutableStateOf(false) }
     val currentDestination = navController.currentDestination?.route
+
+    val packageManager = context.packageManager
+    val placeholder = try {
+        placeholder(packageManager.getApplicationIcon(packageName))
+    } catch (e: Exception) {
+        placeholder(R.drawable.android)
+    }
 
     LaunchedEffect(Unit) {
         SettingsManager(context).readInt("time_format") {
@@ -183,7 +191,10 @@ fun DetailScreen(navController: NavController, packageName: String) {
                     GlideImage(
                         model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${packageName}.jpg",
                         contentDescription = "",
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop,
+                        alignment = Alignment.Center,
+                        failure = placeholder
                     )
                 }
                 Box(
