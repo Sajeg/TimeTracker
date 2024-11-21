@@ -29,12 +29,14 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.integration.compose.Placeholder
 import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
@@ -96,43 +97,43 @@ fun AppOverview(navController: NavController) {
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val context = LocalContext.current
-    var storeNames = remember { mutableStateListOf<AppEntity>() }
+    val storeNames = remember { mutableStateListOf<AppEntity>() }
     val playtimeMap = remember { mutableStateMapOf<String, Long>() }
     val state = rememberLazyGridState()
-    var sort = remember { mutableIntStateOf(0) }
-    var time = remember { mutableIntStateOf(0) }
-    var timeOffset = remember { mutableLongStateOf(0) }
-    val timeText = remember { mutableStateOf("Today") }
+    var sort by remember { mutableIntStateOf(0) }
+    var time by remember { mutableIntStateOf(0) }
+    var timeOffset by remember { mutableLongStateOf(0) }
+    var timeText by remember { mutableStateOf("Today") }
+    var totalTime by remember { mutableLongStateOf(0) }
     val sortOptions = listOf("A-Z", "Z-A", "Playtime")
     val timeFrameOptions = listOf("Day", "Week", "Month", "All time")
-    val usFormat = remember { mutableStateOf(false) }
+    var usFormat by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        SettingsManager(context).readInt("time_format") {
-            usFormat.value = it == 1
+        SettingsManager(context).readInt("time_format") { timeFormat ->
+            usFormat = timeFormat == 1
             SettingsManager(context).readInt("sort") {
-                sort.intValue = it
+                sort = it
             }
-            SettingsManager(context).readInt("time") {
-                time.intValue = it
+            SettingsManager(context).readInt("time") { time ->
                 calculateDate(
-                    time.intValue,
-                    timeOffset.longValue,
-                    usFormat.value
+                    time,
+                    timeOffset,
+                    usFormat
                 ) { startTime, endTime, text ->
                     val dbManager = DatabaseManager(context)
                     dbManager.getPlaytime(startTime, endTime) { events ->
                         playtimeMap.clear()
+                        totalTime = 0
                         events.forEach {
-                            playtimeMap.put(it.key, it.value)
-                            Log.d("Playtime", playtimeMap.toString())
+                            playtimeMap[it.key] = it.value
+                            totalTime += it.value
                         }
                         dbManager.close()
-                        timeText.value = text
+                        timeText = text
                     }
                 }
             }
@@ -149,12 +150,18 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         }
     }
 
-    if (sort.intValue == 0) {
-        storeNames.sortBy { it.displayName }
-    } else if (sort.intValue == 1) {
-        storeNames.sortByDescending { it.displayName }
-    } else if (sort.intValue == 2) {
-        storeNames.sortByDescending { playtimeMap[it.packageName] }
+    when (sort) {
+        0 -> {
+            storeNames.sortBy { it.displayName }
+        }
+
+        1 -> {
+            storeNames.sortByDescending { it.displayName }
+        }
+
+        2 -> {
+            storeNames.sortByDescending { playtimeMap[it.packageName] }
+        }
     }
 
     Column {
@@ -168,21 +175,22 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             IconButton(
                 modifier = Modifier.padding(horizontal = 15.dp),
                 onClick = {
-                    timeOffset.longValue += 1
+                    timeOffset += 1
                     calculateDate(
-                        time.intValue,
-                        timeOffset.longValue,
-                        usFormat.value
+                        time,
+                        timeOffset,
+                        usFormat
                     ) { startTime, endTime, text ->
                         val dbManager = DatabaseManager(context)
                         dbManager.getPlaytime(startTime, endTime) { events ->
                             playtimeMap.clear()
+                            totalTime = 0
                             events.forEach {
-                                playtimeMap.put(it.key, it.value)
-                                Log.d("Playtime", playtimeMap.toString())
+                                playtimeMap[it.key] = it.value
+                                totalTime += it.value
                             }
                             dbManager.close()
-                            timeText.value = text
+                            timeText = text
                         }
                     }
                 }) {
@@ -196,32 +204,33 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                 modifier = modifier
                     .fillMaxWidth()
                     .weight(0.1f),
-                text = timeText.value,
+                text = timeText,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.displaySmall
             )
-            if (timeOffset.longValue != 0L) {
+            if (timeOffset != 0L) {
                 IconButton(
                     modifier = Modifier.padding(horizontal = 15.dp),
                     onClick = {
-                        if (timeOffset.longValue > 0L) {
-                            timeOffset.longValue -= 1
+                        if (timeOffset > 0L) {
+                            timeOffset -= 1
                         }
                         calculateDate(
-                            time.intValue,
-                            timeOffset.longValue,
-                            usFormat.value
+                            time,
+                            timeOffset,
+                            usFormat
                         ) { startTime, endTime, text ->
                             val dbManager = DatabaseManager(context)
                             dbManager.getPlaytime(startTime, endTime) { events ->
                                 playtimeMap.clear()
+                                totalTime = 0
                                 events.forEach {
-                                    playtimeMap.put(it.key, it.value)
-                                    Log.d("Playtime", playtimeMap.toString())
+                                    playtimeMap[it.key] = it.value
+                                    totalTime += it.value
                                 }
                                 dbManager.close()
-                                timeText.value = text
+                                timeText = text
                             }
                         }
                     }) {
@@ -244,6 +253,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                 .fillMaxWidth()
                 .padding(horizontal = 15.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             SingleChoiceSegmentedButtonRow {
                 timeFrameOptions.forEachIndexed { index, label ->
@@ -254,25 +264,30 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                         ),
                         onClick = {
                             SettingsManager(context).saveInt("time", index)
-                            time.intValue = index
-                            timeOffset.longValue = 0L
-                            calculateDate(index, timeOffset.longValue, usFormat.value) { startTime, endTime, text ->
+                            time = index
+                            timeOffset = 0L
+                            calculateDate(index, timeOffset, usFormat) { startTime, endTime, text ->
                                 val dbManager = DatabaseManager(context)
                                 dbManager.getPlaytime(startTime, endTime) { events ->
                                     playtimeMap.clear()
+                                    totalTime = 0
                                     events.forEach {
-                                        playtimeMap.put(it.key, it.value)
-                                        Log.d("Playtime", playtimeMap.toString())
+                                        playtimeMap[it.key] = it.value
+                                        totalTime += it.value
                                     }
                                     dbManager.close()
-                                    timeText.value = text
+                                    timeText = text
                                 }
                             }
                         },
-                        selected = index == time.intValue
+                        selected = index == time
                     ) { Text(label) }
                 }
             }
+            Text("All apps: ${millisecondsToTimeString(totalTime)}",
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.bodyLarge)
             SingleChoiceSegmentedButtonRow {
                 sortOptions.forEachIndexed { index, label ->
                     SegmentedButton(
@@ -281,10 +296,10 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                             count = sortOptions.size
                         ),
                         onClick = {
-                            sort.intValue = index
+                            sort = index
                             SettingsManager(context).saveInt("sort", index)
                         },
-                        selected = index == sort.intValue
+                        selected = index == sort
                     ) { Text(label) }
                 }
             }
@@ -316,64 +331,72 @@ fun calculateDate(
     newDate: (startDate: Long, endDate: Long, text: String) -> Unit
 ) {
     val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
-    var startTime = 0L
-    var endTime = 0L
+    var startTime: Long
+    var endTime: Long
     var startDay = LocalDate.now()
     var endDay = LocalDate.now().minusDays(-1)
     var text = ""
-    if (selected == 0) {
-        startDay = startDay.minusDays(timeOffset)
-        endDay = endDay.minusDays(timeOffset)
-        text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${
-                startDay.year.toString().replace("20", "")
-            }"
-        } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${
-                startDay.year.toString().replace("20", "")
-            }"
+    when (selected) {
+        0 -> {
+            startDay = startDay.minusDays(timeOffset)
+            endDay = endDay.minusDays(timeOffset)
+            text = if (usFormat) {
+                "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                    startDay.year.toString().replace("20", "")
+                }"
+            } else {
+                "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                    startDay.year.toString().replace("20", "")
+                }"
+            }
         }
-    } else if (selected == 1) {
-        startDay = startDay.minusWeeks(timeOffset + 1)
-        endDay = endDay.minusWeeks(timeOffset)
-        val endDisplayDay = endDay.minusDays(1)
-        text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${
-                startDay.year.toString().replace("20", "")
-            }" +
-                    " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
-                        endDisplayDay.year.toString().replace("20", "")
-                    }"
-        } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${
-                startDay.year.toString().replace("20", "")
-            }" +
-                    " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
-                        endDisplayDay.year.toString().replace("20", "")
-                    }"
+
+        1 -> {
+            startDay = startDay.minusWeeks(timeOffset + 1)
+            endDay = endDay.minusWeeks(timeOffset)
+            val endDisplayDay = endDay.minusDays(1)
+            text = if (usFormat) {
+                "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                    startDay.year.toString().replace("20", "")
+                }" +
+                        " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
+                            endDisplayDay.year.toString().replace("20", "")
+                        }"
+            } else {
+                "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                    startDay.year.toString().replace("20", "")
+                }" +
+                        " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
+                            endDisplayDay.year.toString().replace("20", "")
+                        }"
+            }
         }
-    } else if (selected == 2) {
-        startDay = startDay.minusMonths(timeOffset + 1)
-        endDay = endDay.minusMonths(timeOffset)
-        val endDisplayDay = endDay.minusDays(1)
-        text = if (usFormat) {
-            "${startDay.monthValue}/${startDay.dayOfMonth}/${
-                startDay.year.toString().replace("20", "")
-            }" +
-                    " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
-                        endDisplayDay.year.toString().replace("20", "")
-                    }"
-        } else {
-            "${startDay.dayOfMonth}.${startDay.monthValue}.${
-                startDay.year.toString().replace("20", "")
-            }" +
-                    " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
-                        endDisplayDay.year.toString().replace("20", "")
-                    }"
+
+        2 -> {
+            startDay = startDay.minusMonths(timeOffset + 1)
+            endDay = endDay.minusMonths(timeOffset)
+            val endDisplayDay = endDay.minusDays(1)
+            text = if (usFormat) {
+                "${startDay.monthValue}/${startDay.dayOfMonth}/${
+                    startDay.year.toString().replace("20", "")
+                }" +
+                        " - ${endDisplayDay.monthValue}/${endDisplayDay.dayOfMonth}/${
+                            endDisplayDay.year.toString().replace("20", "")
+                        }"
+            } else {
+                "${startDay.dayOfMonth}.${startDay.monthValue}.${
+                    startDay.year.toString().replace("20", "")
+                }" +
+                        " - ${endDisplayDay.dayOfMonth}.${endDisplayDay.monthValue}.${
+                            endDisplayDay.year.toString().replace("20", "")
+                        }"
+            }
         }
-    } else if (selected == 3) {
-        startDay = startDay.minusYears(20)
-        text = "All time"
+
+        3 -> {
+            startDay = startDay.minusYears(20)
+            text = "All time"
+        }
     }
 
     startTime = LocalDateTime
@@ -382,8 +405,8 @@ fun calculateDate(
     endTime = LocalDateTime
         .of(endDay.year, endDay.month.value, endDay.dayOfMonth, 0, 0, 0)
         .toEpochSecond(userZoneOffset)
-    startTime = startTime * 1000
-    endTime = endTime * 1000
+    startTime *= 1000
+    endTime *= 1000
     Log.d("Time", "Start $startTime End $endTime")
     newDate(startTime, endTime, text)
 }
