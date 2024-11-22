@@ -37,12 +37,16 @@ import com.sajeg.timetracker.classes.SettingsManager
 @Composable
 fun Settings(navController: NavController) {
     val context = LocalContext.current
-    val timeFormat = remember { mutableIntStateOf(-1) }
+    var timeFormat by remember { mutableIntStateOf(-1) }
+    var metaData by remember { mutableIntStateOf(-1) }
     var message by remember { mutableStateOf("") }
     var messageSend by remember { mutableStateOf(false) }
     val currentDestination = navController.currentDestination?.route
-    if (timeFormat.intValue == -1) {
-        SettingsManager(context).readInt("time_format") { timeFormat.intValue = it }
+    if (timeFormat == -1) {
+        SettingsManager(context).readInt("time_format") { timeFormat = it }
+    }
+    if (metaData == -1) {
+        SettingsManager(context).readInt("new_meta_data") { metaData = it }
     }
     Row(
         modifier = Modifier
@@ -92,11 +96,29 @@ fun Settings(navController: NavController) {
                     modifier = Modifier.padding(15.dp)
                 )
                 Switch(
-                    checked = timeFormat.intValue == 1,
+                    checked = timeFormat == 1,
                     onCheckedChange = {
-                        timeFormat.intValue = if (it) 1 else 0
+                        timeFormat = if (it) 1 else 0
                         SettingsManager(context).saveInt(
                             "time_format",
+                            if (it) 1 else 0
+                        )
+                    }
+                )
+            }
+            Row {
+                Text(
+                    "New experimental meta data fetching ",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(15.dp)
+                )
+                Switch(
+                    checked = metaData == 1,
+                    onCheckedChange = {
+                        metaData = if (it) 1 else 0
+                        SettingsManager(context).saveInt(
+                            "new_meta_data",
                             if (it) 1 else 0
                         )
                     }
@@ -137,7 +159,7 @@ fun Settings(navController: NavController) {
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n-threethan \n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
+            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n- threethan \n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }

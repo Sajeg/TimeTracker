@@ -21,14 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.Setup
+import com.sajeg.timetracker.classes.BackgroundUpdater
 import com.sajeg.timetracker.classes.MetaDataManager
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.getInstalledVrGames
+import com.sajeg.timetracker.database.DatabaseManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun Setup(navController: NavController) {
@@ -74,12 +81,39 @@ fun ScanEvents(navController: NavController) {
         packageNames.add(app.packageName)
     }
 
-    LaunchedEffect(scanning) {
-        MetaDataManager().updateData(context, packageNames)
-        UsageStatsFetcher(context).updateDatabase {
-            scanning.value = false
-            CoroutineScope(Dispatchers.Main).launch {
-                navController.navigate(AppOverview)
+    LaunchedEffect(Unit) {
+        val dbManager = DatabaseManager(context)
+        dbManager.getAppNames { oldNames ->
+            MetaDataManager().updateData(context, packageNames) {
+                if (oldNames.isEmpty()) {
+                    scanning.value = false
+                    CoroutineScope(Dispatchers.Main).launch {
+                        navController.navigate(AppOverview)
+                    }
+                }
+            }
+            UsageStatsFetcher(context).updateDatabase {
+                if (oldNames.isNotEmpty()) {
+                    scanning.value = false
+                    CoroutineScope(Dispatchers.Main).launch {
+                        navController.navigate(AppOverview)
+                    }
+
+                    // Schedule the worker after data is fetched other wise it can interfere with past data
+                    val updateWorkRequest =
+                        PeriodicWorkRequestBuilder<BackgroundUpdater>(12, TimeUnit.HOURS)
+                            .setConstraints(
+                                Constraints.Builder()
+                                    .build()
+                            )
+                            .build()
+                    WorkManager
+                        .getInstance(context)
+                        .enqueueUniquePeriodicWork(
+                            "updatePlaytime",
+                            ExistingPeriodicWorkPolicy.KEEP,
+                            updateWorkRequest)
+                }
             }
         }
     }
