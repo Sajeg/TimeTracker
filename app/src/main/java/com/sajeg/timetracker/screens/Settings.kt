@@ -26,6 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sajeg.timetracker.AppOverview
@@ -39,6 +44,7 @@ fun Settings(navController: NavController) {
     val context = LocalContext.current
     var timeFormat by remember { mutableIntStateOf(-1) }
     var metaData by remember { mutableIntStateOf(-1) }
+    var hideApps by remember { mutableIntStateOf(-1) }
     var message by remember { mutableStateOf("") }
     var messageSend by remember { mutableStateOf(false) }
     val currentDestination = navController.currentDestination?.route
@@ -47,6 +53,9 @@ fun Settings(navController: NavController) {
     }
     if (metaData == -1) {
         SettingsManager(context).readInt("new_meta_data") { metaData = it }
+    }
+    if (hideApps == -1) {
+        SettingsManager(context).readInt("hide_unknown") { hideApps = it }
     }
     Row(
         modifier = Modifier
@@ -107,8 +116,14 @@ fun Settings(navController: NavController) {
                 )
             }
             Row {
+                val metaDataText = buildAnnotatedString {
+                    append("New experimental meta data fetching ")
+                    withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) {
+                        append(" requires two restarts")
+                    }
+                }
                 Text(
-                    "New experimental meta data fetching ",
+                    metaDataText,
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(15.dp)
@@ -119,6 +134,24 @@ fun Settings(navController: NavController) {
                         metaData = if (it) 1 else 0
                         SettingsManager(context).saveInt(
                             "new_meta_data",
+                            if (it) 1 else 0
+                        )
+                    }
+                )
+            }
+            Row {
+                Text(
+                    "Hide unknown apps",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(15.dp)
+                )
+                Switch(
+                    checked = hideApps == 1,
+                    onCheckedChange = {
+                        hideApps = if (it) 1 else 0
+                        SettingsManager(context).saveInt(
+                            "hide_unknown",
                             if (it) 1 else 0
                         )
                     }

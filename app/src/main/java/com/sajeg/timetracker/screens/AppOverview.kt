@@ -116,6 +116,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val state = rememberLazyGridState()
     var sort by remember { mutableIntStateOf(0) }
     var time by remember { mutableIntStateOf(0) }
+    var hideUnknownApps by remember { mutableStateOf(false) }
     var timeOffset by remember { mutableLongStateOf(0) }
     var timeText by remember { mutableStateOf("Today") }
     var totalTime by remember { mutableLongStateOf(0) }
@@ -129,6 +130,23 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             SettingsManager(context).readInt("sort") {
                 sort = it
             }
+            SettingsManager(context).readInt("hide_unknown") {
+                hideUnknownApps = it == 1
+                val dbManager = DatabaseManager(context)
+                dbManager.getAppNames { names ->
+                    dbManager.close()
+                    metaData.clear()
+                    if (hideUnknownApps) {
+                        names.forEach { app ->
+                            if (app.icon != null || app.landscapeImage != null) {
+                                metaData.add(app)
+                            }
+                        }
+                    } else {
+                        metaData.addAll(names)
+                    }
+                }
+            }
             SettingsManager(context).readInt("time") { savedTimeFrame ->
                 time = savedTimeFrame
                 calculateDate(
@@ -140,25 +158,17 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                     dbManager.getPlaytime(startTime, endTime) { events ->
                         playtimeMap.clear()
                         totalTime = 0
-                        events.forEach {
-                            playtimeMap[it.key] = it.value
-                            totalTime += it.value
+                        events.forEach { event ->
+                            if (metaData.find { it.packageName == event.key } != null) {
+                                playtimeMap[event.key] = event.value
+                                totalTime += event.value
+                            }
                         }
                         dbManager.close()
                         timeText = text
                     }
                 }
             }
-        }
-    }
-
-    if (metaData.isEmpty()) {
-        LaunchedEffect(metaData) {
-            val dbManager = DatabaseManager(context)
-            dbManager.getAppNames { names ->
-                names.forEach { metaData.add(it) }
-            }
-            dbManager.close()
         }
     }
 
@@ -197,9 +207,11 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                         dbManager.getPlaytime(startTime, endTime) { events ->
                             playtimeMap.clear()
                             totalTime = 0
-                            events.forEach {
-                                playtimeMap[it.key] = it.value
-                                totalTime += it.value
+                            events.forEach { event ->
+                                if (metaData.find { it.packageName == event.key } != null) {
+                                    playtimeMap[event.key] = event.value
+                                    totalTime += event.value
+                                }
                             }
                             dbManager.close()
                             timeText = text
@@ -237,9 +249,11 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                             dbManager.getPlaytime(startTime, endTime) { events ->
                                 playtimeMap.clear()
                                 totalTime = 0
-                                events.forEach {
-                                    playtimeMap[it.key] = it.value
-                                    totalTime += it.value
+                                events.forEach { event ->
+                                    if (metaData.find { it.packageName == event.key } != null) {
+                                        playtimeMap[event.key] = event.value
+                                        totalTime += event.value
+                                    }
                                 }
                                 dbManager.close()
                                 timeText = text
@@ -283,9 +297,11 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                                 dbManager.getPlaytime(startTime, endTime) { events ->
                                     playtimeMap.clear()
                                     totalTime = 0
-                                    events.forEach {
-                                        playtimeMap[it.key] = it.value
-                                        totalTime += it.value
+                                    events.forEach { event ->
+                                        if (metaData.find { it.packageName == event.key } != null) {
+                                            playtimeMap[event.key] = event.value
+                                            totalTime += event.value
+                                        }
                                     }
                                     dbManager.close()
                                     timeText = text
@@ -296,10 +312,12 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                     ) { Text(label) }
                 }
             }
-            Text("All apps: ${millisecondsToTimeString(totalTime)}",
+            Text(
+                "All apps: ${millisecondsToTimeString(totalTime)}",
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.bodyLarge)
+                style = MaterialTheme.typography.bodyLarge
+            )
             SingleChoiceSegmentedButtonRow {
                 sortOptions.forEachIndexed { index, label ->
                     SegmentedButton(
@@ -329,8 +347,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         ) {
             items(metaData) { app ->
                 val playtime = playtimeMap[app.packageName] ?: 0L
-                val name = metaData.find { it.packageName == app.packageName }?.displayName ?: ""
-                AppCard(onClick, app, name, playtime)
+                AppCard(onClick, app, playtime)
             }
         }
     }
@@ -428,7 +445,6 @@ fun calculateDate(
 private fun AppCard(
     onClick: (String) -> Unit,
     app: AppEntity,
-    name: String,
     playtime: Long
 ) {
     val context = LocalContext.current
@@ -465,7 +481,11 @@ private fun AppCard(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(name.trim(), style = MaterialTheme.typography.titleLarge, maxLines = 1)
+                    Text(
+                        app.displayName.trim(),
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1
+                    )
                     Text(millisecondsToTimeString(playtime))
                 }
             }
