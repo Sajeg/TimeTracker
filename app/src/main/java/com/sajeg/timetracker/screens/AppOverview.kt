@@ -53,6 +53,7 @@ import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
+import com.sajeg.timetracker.Search
 import com.sajeg.timetracker.Settings
 import com.sajeg.timetracker.classes.SettingsManager
 import com.sajeg.timetracker.database.AppEntity
@@ -70,6 +71,16 @@ fun AppOverview(navController: NavController) {
         modifier = Modifier.background(MaterialTheme.colorScheme.background)
     ) {
         NavigationRail {
+            NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.Search",
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.search),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(Search) }
+            )
             NavigationRailItem(
                 selected = currentDestination == "com.sajeg.timetracker.AppOverview",
                 icon = {

@@ -108,8 +108,8 @@ fun LeftPart(modifier: Modifier) {
     val startTime =
         LocalDateTime.of(today.year, today.month.value, today.dayOfMonth, 0, 0, 0)
             .toEpochSecond(userZoneOffset)
-    var usage = remember { mutableStateListOf<PieChartPlottingData>() }
-    var appNames = remember { mutableStateListOf<AppEntity>() }
+    val usage = remember { mutableStateListOf<PieChartPlottingData>() }
+    val appNames = remember { mutableStateListOf<AppEntity>() }
     if (usage.isEmpty() && appNames.isEmpty()) {
         LaunchedEffect(usage) {
             dbManager.getAppNames { names ->
@@ -152,9 +152,9 @@ fun LeftPart(modifier: Modifier) {
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
-    var usageAllTime = remember { mutableMapOf<String?, Long>() }
-    var usageWeek = remember { mutableMapOf<String?, Long>() }
-    var appNames = remember { mutableStateListOf<AppEntity>() }
+    val usageAllTime = remember { mutableMapOf<String?, Long>() }
+    val usageWeek = remember { mutableMapOf<String?, Long>() }
+    val appNames = remember { mutableStateListOf<AppEntity>() }
     val context = LocalContext.current
     val packageManager = context.packageManager
 
@@ -256,7 +256,7 @@ fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
 
 @Composable
 @OptIn(ExperimentalGlideComposeApi::class)
-private fun ListItem(
+fun ListItem(
     modifier: Modifier,
     packageName: String,
     displayName: String,

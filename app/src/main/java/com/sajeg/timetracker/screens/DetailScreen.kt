@@ -153,6 +153,16 @@ fun DetailScreen(navController: NavController, packageName: String) {
     ) {
         NavigationRail {
             NavigationRailItem(
+                selected = currentDestination == "com.sajeg.timetracker.Search",
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.search),
+                        contentDescription = ""
+                    )
+                },
+                onClick = { navController.navigate(com.sajeg.timetracker.Search) }
+            )
+            NavigationRailItem(
                 selected = currentDestination == "com.sajeg.timetracker.AppOverview",
                 icon = {
                     Icon(

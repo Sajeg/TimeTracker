@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,27 +35,34 @@ import kotlinx.coroutines.launch
 @Composable
 fun Setup(navController: NavController) {
     val context = LocalContext.current
-    val usageAccessLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
-        navController.navigate(Setup)
-    }
-    val intent = Intent("android.settings.USAGE_ACCESS_SETTINGS")
-    intent.setPackage("com.android.settings")
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize()
+    ) {
+        val usageAccessLauncher =
+            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
+                navController.navigate(Setup)
+            }
+        val intent = Intent("android.settings.USAGE_ACCESS_SETTINGS")
+        intent.setPackage("com.android.settings")
 
-    val usageStatsManager =
-        context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-    val endTime = System.currentTimeMillis()
-    val startTime = endTime - 1000 * 3600
+        val usageStatsManager =
+            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val endTime = System.currentTimeMillis()
+        val startTime = endTime - 1000 * 3600
 
-    val usageStatsList = usageStatsManager.queryUsageStats(
-        UsageStatsManager.INTERVAL_DAILY, startTime, endTime
-    )
+        val usageStatsList = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY, startTime, endTime
+        )
 
-    if (usageStatsList.isEmpty()) {
-        LaunchedEffect(Unit) {
-            usageAccessLauncher.launch(intent)
+        if (usageStatsList.isEmpty()) {
+            LaunchedEffect(Unit) {
+                usageAccessLauncher.launch(intent)
+            }
+        } else {
+            ScanEvents(navController)
         }
-    } else {
-        ScanEvents(navController)
     }
 }
 
@@ -87,14 +95,14 @@ fun ScanEvents(navController: NavController) {
             }
         }
     }
-    if (scanning.value) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (scanning.value) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Text("Processing your playtime...", color = MaterialTheme.colorScheme.onBackground)
         }
