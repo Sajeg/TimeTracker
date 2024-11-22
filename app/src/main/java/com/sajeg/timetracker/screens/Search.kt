@@ -91,7 +91,8 @@ fun Search(navController: NavController) {
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
-                .padding(15.dp)
+                .padding(horizontal = 15.dp)
+                .padding(top = 5.dp)
         ) {
             SearchBar { query ->
                 val filteredApps = appList.filter { it.displayName.contains(query) }
@@ -107,6 +108,7 @@ fun Search(navController: NavController) {
                             modifier = Modifier,
                             packageName = app.packageName,
                             displayName = app.displayName,
+                            icon = app.icon,
                             usage = playtimeList[app.packageName] ?: 0L
                         ) { navController.navigate(DetailScreen(app.packageName)) }
                     }
@@ -125,7 +127,6 @@ fun SearchBar(onQueryChanged: (query: String) -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 15.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -150,7 +151,7 @@ fun SearchBar(onQueryChanged: (query: String) -> Unit) {
                     modifier = Modifier
                         .weight(0.1f)
                         .clip(RoundedCornerShape(50.dp)),
-                    textStyle = MaterialTheme.typography.bodyMedium
+//                    textStyle = MaterialTheme.typography.bodyMedium
                 )
             }
         }

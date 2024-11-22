@@ -111,7 +111,7 @@ fun AppOverview(navController: NavController) {
 @Composable
 fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
     val context = LocalContext.current
-    val storeNames = remember { mutableStateListOf<AppEntity>() }
+    val metaData = remember { mutableStateListOf<AppEntity>() }
     val playtimeMap = remember { mutableStateMapOf<String, Long>() }
     val state = rememberLazyGridState()
     var sort by remember { mutableIntStateOf(0) }
@@ -151,11 +151,11 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         }
     }
 
-    if (storeNames.isEmpty()) {
-        LaunchedEffect(storeNames) {
+    if (metaData.isEmpty()) {
+        LaunchedEffect(metaData) {
             val dbManager = DatabaseManager(context)
             dbManager.getAppNames { names ->
-                names.forEach { storeNames.add(it) }
+                names.forEach { metaData.add(it) }
             }
             dbManager.close()
         }
@@ -163,15 +163,15 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
 
     when (sort) {
         0 -> {
-            storeNames.sortBy { it.displayName }
+            metaData.sortBy { it.displayName }
         }
 
         1 -> {
-            storeNames.sortByDescending { it.displayName }
+            metaData.sortByDescending { it.displayName }
         }
 
         2 -> {
-            storeNames.sortByDescending { playtimeMap[it.packageName] }
+            metaData.sortByDescending { playtimeMap[it.packageName] }
         }
     }
 
@@ -326,9 +326,9 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(29.dp, Alignment.Top),
             horizontalArrangement = Arrangement.spacedBy(29.dp, Alignment.Start)
         ) {
-            items(storeNames) { app ->
+            items(metaData) { app ->
                 val playtime = playtimeMap[app.packageName] ?: 0L
-                val name = storeNames.find { it.packageName == app.packageName }?.displayName ?: ""
+                val name = metaData.find { it.packageName == app.packageName }?.displayName ?: ""
                 AppCard(onClick, app, name, playtime)
             }
         }
@@ -445,7 +445,7 @@ private fun AppCard(
             .clickable { onClick(app.packageName) }
     ) {
         GlideImage(
-            model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${app.packageName}.jpg",
+            model = app.landscapeImage,
             contentDescription = "",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,

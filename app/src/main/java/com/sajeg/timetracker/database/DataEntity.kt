@@ -7,7 +7,9 @@ import androidx.room.PrimaryKey
 @Entity
 data class AppEntity (
     @PrimaryKey val packageName: String,
-    @ColumnInfo(name = "display_name") val displayName: String
+    @ColumnInfo(name = "display_name") val displayName: String,
+    @ColumnInfo(name = "landscape_image") val landscapeImage: String?,
+    @ColumnInfo(name = "icon") val icon: String?,
 )
 
 @Entity

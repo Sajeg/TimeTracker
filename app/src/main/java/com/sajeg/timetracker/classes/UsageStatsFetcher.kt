@@ -13,15 +13,15 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 class UsageStatsFetcher(val context: Context) {
-    val usageStatsManager =
+    private val usageStatsManager =
         context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
     fun updateDatabase(done: () -> Unit) {
         SettingsManager(context).readLong("last_scan") { startTime ->
             val endTime = System.currentTimeMillis()
-            var usageEvents = usageStatsManager.queryEvents(startTime, endTime)
-            var eventList = HashMap<String, MutableList<UsageEvents.Event>>()
-            var eventEntities = mutableListOf<EventEntity>()
+            val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
+            val eventList = HashMap<String, MutableList<UsageEvents.Event>>()
+            val eventEntities = mutableListOf<EventEntity>()
             while (usageEvents.hasNextEvent()) {
                 val currentEvent = UsageEvents.Event()
                 usageEvents.getNextEvent(currentEvent)
@@ -91,17 +91,6 @@ class UsageStatsFetcher(val context: Context) {
         }
     }
 
-    fun getTotalPlaytime(packageName: String, onResponse: (time: kotlin.Long) -> Unit) {
-        var totalPlayTime = 0L
-        val dbManager = DatabaseManager(context)
-        dbManager.getAppEvents(packageName) { events ->
-            events.forEach { event ->
-                totalPlayTime += event.timeDiff
-            }
-            onResponse(totalPlayTime)
-        }
-    }
-
     fun getHourlyDayAppUsage(
         packageName: String,
         year: Int,
@@ -133,7 +122,7 @@ class UsageStatsFetcher(val context: Context) {
         }
     }
 
-    fun getUsageStats(
+    private fun getUsageStats(
         startTime: Long,
         endTime: Long,
         result: (appUsage: HashMap<String, Long>) -> Unit

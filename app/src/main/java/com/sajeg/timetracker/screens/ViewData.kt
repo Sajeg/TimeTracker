@@ -222,6 +222,7 @@ fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
                             modifier,
                             packageName,
                             name,
+                            "",
                             timeDiff
                         ) { onClick(it) }
                     }
@@ -246,6 +247,7 @@ fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
                         modifier,
                         packageName,
                         name,
+                        "",
                         timeDiff
                     ) { onClick(it) }
                 }
@@ -260,6 +262,7 @@ fun ListItem(
     modifier: Modifier,
     packageName: String,
     displayName: String,
+    icon: String?,
     usage: Long,
     onClick: (packageName: String) -> Unit
 ) {
@@ -276,7 +279,7 @@ fun ListItem(
                 modifier = Modifier.clip(RoundedCornerShape(10.dp))
             ) {
                 GlideImage(
-                    model = "https://files.cocaine.trade/LauncherIcons/oculus_icon/${packageName}.jpg",
+                    model = icon,
                     contentDescription = "",
                     modifier = Modifier.size(75.dp),
                     contentScale = ContentScale.Crop,

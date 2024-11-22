@@ -54,6 +54,7 @@ import com.sajeg.timetracker.classes.SettingsManager
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.Plot
 import com.sajeg.timetracker.convertEpochToDate
+import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
 import com.sajeg.timetracker.database.EventEntity
 import com.sajeg.timetracker.millisecondsToTimeString
@@ -68,7 +69,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
     navController.context
     val context = LocalContext.current
     val today = LocalDate.now()
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf<AppEntity?>(null) }
     var usageDataHourly by remember { mutableStateOf<PlottingData?>(null) }
     val userZoneOffset = ZonedDateTime.now(ZoneId.systemDefault()).offset
     var events by remember { mutableStateOf<List<EventEntity>>(listOf()) }
@@ -102,10 +103,10 @@ fun DetailScreen(navController: NavController, packageName: String) {
             }
     }
 
-    if (name == "") {
+    if (name == null) {
         val dbManager = DatabaseManager(context)
         dbManager.getAppNames { names ->
-            name = names.find { it.packageName == packageName }?.displayName ?: "GAME"
+            name = names.find { it.packageName == packageName }
             dbManager.close()
         }
     }
@@ -198,14 +199,16 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         .height(220.dp)
                         .weight(0.4f)
                 ) {
-                    GlideImage(
-                        model = "https://files.cocaine.trade/LauncherIcons/oculus_landscape/${packageName}.jpg",
-                        contentDescription = "",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        alignment = Alignment.Center,
-                        failure = placeholder
-                    )
+                    if (name != null) {
+                        GlideImage(
+                            model = name!!.landscapeImage,
+                            contentDescription = "",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            alignment = Alignment.Center,
+                            failure = placeholder
+                        )
+                    }
                 }
                 Box(
                     modifier = Modifier
@@ -236,7 +239,7 @@ fun DetailScreen(navController: NavController, packageName: String) {
                         }
                         append(" ")
                         withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(name)
+                            append(name?.displayName ?: "name")
                         }
                         append(" that's ")
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {

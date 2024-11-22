@@ -4,14 +4,24 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.database.Cursor
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.collections.toTypedArray
 
 class DatabaseManager(context: Context) {
-    val db = Room.databaseBuilder(context, Database::class.java, "events").build()
-    val dao = db.dao()
+    private val migration1to2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE AppEntity ADD COLUMN landscape_image TEXT")
+            db.execSQL("ALTER TABLE AppEntity ADD COLUMN icon TEXT")
+        }
+    }
+    private val db = Room.databaseBuilder(context, Database::class.java, "events")
+        .addMigrations(migration1to2)
+        .build()
+    private val dao = db.dao()
 
     fun getAppEvents(packageName: String, onResponse: (List<EventEntity>) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {

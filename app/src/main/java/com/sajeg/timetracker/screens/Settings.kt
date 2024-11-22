@@ -137,7 +137,7 @@ fun Settings(navController: NavController) {
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
+            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n-threethan \n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
         }
     }
 }

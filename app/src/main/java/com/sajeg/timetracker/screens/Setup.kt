@@ -23,11 +23,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.Setup
-import com.sajeg.timetracker.classes.NameDownloader
+import com.sajeg.timetracker.classes.MetaDataManager
 import com.sajeg.timetracker.classes.UsageStatsFetcher
 import com.sajeg.timetracker.composables.getInstalledVrGames
-import com.sajeg.timetracker.database.AppEntity
-import com.sajeg.timetracker.database.DatabaseManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -77,17 +75,7 @@ fun ScanEvents(navController: NavController) {
     }
 
     LaunchedEffect(scanning) {
-        NameDownloader().getStoreName(context, packageNames) { storeNames ->
-            val dbManager = DatabaseManager(context)
-            for (app in packageNames) {
-                if (storeNames.find { it.packageName == app } == null) {
-                    val packageManager = context.packageManager
-                    val appInfo = packageManager.getApplicationInfo(app, 0)
-                    val name = packageManager.getApplicationLabel(appInfo).toString()
-                    dbManager.addAppNames(listOf(AppEntity(app, name)))
-                }
-            }
-        }
+        MetaDataManager().updateData(context, packageNames)
         UsageStatsFetcher(context).updateDatabase {
             scanning.value = false
             CoroutineScope(Dispatchers.Main).launch {
