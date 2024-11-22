@@ -47,6 +47,9 @@ android {
 }
 
 dependencies {
+    // Background Worker
+    implementation(libs.androidx.work.runtime.ktx)
+
     // HttpRequests
     implementation(libs.okhttp)
 

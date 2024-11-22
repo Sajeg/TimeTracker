@@ -50,6 +50,7 @@ fun Search(navController: NavController) {
             filteredAppList.sortBy { it.displayName }
             dbManager.getPlaytime(0L, System.currentTimeMillis()) { playtime ->
                 playtimeList.putAll(playtime)
+                dbManager.close()
             }
         }
     }
