@@ -129,9 +129,10 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             SettingsManager(context).readInt("sort") {
                 sort = it
             }
-            SettingsManager(context).readInt("time") { time ->
+            SettingsManager(context).readInt("time") { savedTimeFrame ->
+                time = savedTimeFrame
                 calculateDate(
-                    time,
+                    savedTimeFrame,
                     timeOffset,
                     usFormat
                 ) { startTime, endTime, text ->
