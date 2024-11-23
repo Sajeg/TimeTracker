@@ -16,10 +16,21 @@ fun convertEpochToDate(epoch: Long, usFormat: Boolean = false): String {
     return dateTime.format(formatter)
 }
 
+fun convertEpochToDateWithSeconds(epoch: Long, usFormat: Boolean = false): String {
+    val instant = Instant.ofEpochMilli(epoch)
+    val dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault())
+    val formatter = if (usFormat) {
+        DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss")
+    } else {
+        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
+    }
+    return dateTime.format(formatter)
+}
+
 fun millisecondsToTimeString(time: Long): String {
-    var seconds = time / 1000
-    var minutes = seconds / 60
-    var hours = minutes / 60
+    val seconds = time / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
 
     return when {
         hours > 0 -> "${hours}h ${minutes % 60}m"

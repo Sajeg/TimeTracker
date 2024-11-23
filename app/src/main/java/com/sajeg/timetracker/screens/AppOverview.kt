@@ -132,20 +132,7 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             }
             SettingsManager(context).readInt("hide_unknown") {
                 hideUnknownApps = it == 1
-                val dbManager = DatabaseManager(context)
-                dbManager.getAppNames { names ->
-                    dbManager.close()
-                    metaData.clear()
-                    if (hideUnknownApps) {
-                        names.forEach { app ->
-                            if (app.icon != null || app.landscapeImage != null) {
-                                metaData.add(app)
-                            }
-                        }
-                    } else {
-                        metaData.addAll(names)
-                    }
-                }
+
             }
             SettingsManager(context).readInt("time") { savedTimeFrame ->
                 time = savedTimeFrame
@@ -168,6 +155,23 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
                         timeText = text
                     }
                 }
+            }
+        }
+    }
+
+    LaunchedEffect(metaData, hideUnknownApps) {
+        val dbManager = DatabaseManager(context)
+        dbManager.getAppNames { names ->
+            dbManager.close()
+            metaData.clear()
+            if (hideUnknownApps) {
+                names.forEach { app ->
+                    if (app.icon != null || app.landscapeImage != null) {
+                        metaData.add(app)
+                    }
+                }
+            } else {
+                metaData.addAll(names)
             }
         }
     }

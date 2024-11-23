@@ -1,13 +1,14 @@
 package com.sajeg.timetracker.classes
 
 import android.app.usage.UsageEvents
-import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import com.sajeg.timetracker.composables.isValidApp
+import com.sajeg.timetracker.convertEpochToDateWithSeconds
 import com.sajeg.timetracker.database.DatabaseManager
 import com.sajeg.timetracker.database.EventEntity
+import com.sajeg.timetracker.millisecondsToTimeString
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -31,18 +32,34 @@ class UsageStatsFetcher(val context: Context) {
                     isValidApp(currentEvent.packageName, context)
                 ) {
                     val key = currentEvent.packageName
+                    Log.d("EventRegister", key)
                     eventList.getOrPut(key) { mutableListOf(currentEvent) }.add(currentEvent)
                 }
             }
 
             eventList.forEach { (packageName, events) ->
                 val totalEvents = events.size
-                if (totalEvents > 1) {
-                    for (i in 0 until totalEvents - 1) {
-                        val e0 = events[i]
-                        val e1 = events[i + 1]
 
-                        // Maybe there is a need to include Event.ACTIVITY_STOPPED
+                val filteredEvents = mutableListOf<UsageEvents.Event>()
+                events.sortBy { it.timeStamp }
+                var lastStopEvent: UsageEvents.Event? = null
+                for (event in events) {
+                    if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                        lastStopEvent?.let { filteredEvents.add(it) }
+                        lastStopEvent = null
+                        filteredEvents.add(event)
+                    } else if (event.eventType == UsageEvents.Event.ACTIVITY_PAUSED || event.eventType == UsageEvents.Event.ACTIVITY_STOPPED) {
+                        lastStopEvent = event
+                    }
+                }
+                lastStopEvent?.let { filteredEvents.add(it) }
+
+
+                if (filteredEvents.size > 1) {
+                    for (i in 0 until filteredEvents.size - 1) {
+                        val e0 = filteredEvents[i]
+                        val e1 = filteredEvents[i + 1]
+
                         if (e0.eventType == UsageEvents.Event.ACTIVITY_RESUMED &&
                             (e1.eventType == UsageEvents.Event.ACTIVITY_PAUSED || e1.eventType == UsageEvents.Event.ACTIVITY_STOPPED)
                         ) {
@@ -57,33 +74,35 @@ class UsageStatsFetcher(val context: Context) {
                             )
                         }
                     }
-                    if (events[1].eventType == UsageEvents.Event.ACTIVITY_PAUSED || events[1].eventType == UsageEvents.Event.ACTIVITY_STOPPED) {
+                    if (filteredEvents[1].eventType == UsageEvents.Event.ACTIVITY_PAUSED || filteredEvents[1].eventType == UsageEvents.Event.ACTIVITY_STOPPED) {
                         eventEntities.add(
                             EventEntity(
                                 0,
                                 packageName,
                                 startTime,
-                                events[1].timeStamp,
-                                events[1].timeStamp - startTime
+                                filteredEvents[1].timeStamp,
+                                filteredEvents[1].timeStamp - startTime
                             )
                         )
                     }
-                    if (events.last().eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                    if (filteredEvents.last().eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
                         eventEntities.add(
                             EventEntity(
                                 0,
                                 packageName,
-                                events.last().timeStamp,
+                                filteredEvents.last().timeStamp,
                                 endTime,
-                                endTime - events.last().timeStamp
+                                endTime - filteredEvents.last().timeStamp
                             )
                         )
                     }
                     Log.d("EventScanner", "new event")
                 }
+                Log.d("EventTypeSortedArray", events.map { it.eventType }.toString())
+
             }
+            Log.d("ALLEVENTS", eventEntities.toString())
             SettingsManager(context).saveLong("last_scan", endTime)
-            Log.d("EventScanner", "Done")
             val dbManager = DatabaseManager(context)
             dbManager.addEvent(*eventEntities.toTypedArray())
             dbManager.close()
@@ -97,7 +116,7 @@ class UsageStatsFetcher(val context: Context) {
         month: Int,
         day: Int,
         onResponse: (PlottingData) -> Unit
-    ){
+    ) {
         val output = HashMap<Long, Long>()
         val userZoneId = ZoneId.systemDefault()
         val userZoneOffset = ZonedDateTime.now(userZoneId).offset

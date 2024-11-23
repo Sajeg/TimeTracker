@@ -359,7 +359,9 @@ fun DetailScreen(navController: NavController, packageName: String) {
                                         horizontalArrangement = Arrangement.SpaceEvenly
                                     ) {
                                         Button({
-                                            DatabaseManager(context).deleteAppData(packageName)
+                                            val dbManager = DatabaseManager(context)
+                                            dbManager.deleteAppData(packageName)
+                                            dbManager.close()
                                             navController.navigate(AppOverview)
                                         }, colors = colors) { Text("Reset data") }
                                         Button({ deleteWarningShown = false }) { Text("Cancel") }

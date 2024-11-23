@@ -84,6 +84,7 @@ fun ScanEvents(navController: NavController) {
     LaunchedEffect(Unit) {
         val dbManager = DatabaseManager(context)
         dbManager.getAppNames { oldNames ->
+            dbManager.close()
             MetaDataManager().updateData(context, packageNames) {
                 if (oldNames.isEmpty()) {
                     scanning.value = false
