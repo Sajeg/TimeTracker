@@ -1,5 +1,6 @@
 package com.sajeg.timetracker.screens
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.sajeg.timetracker.AppOverview
 import com.sajeg.timetracker.DetailScreen
 import com.sajeg.timetracker.R
@@ -223,7 +225,8 @@ fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
                             packageName,
                             name,
                             "",
-                            timeDiff
+                            timeDiff,
+                            context
                         ) { onClick(it) }
                     }
                 }
@@ -248,7 +251,8 @@ fun RightPart(modifier: Modifier, onClick: (String) -> Unit) {
                         packageName,
                         name,
                         "",
-                        timeDiff
+                        timeDiff,
+                        context
                     ) { onClick(it) }
                 }
             }
@@ -264,8 +268,15 @@ fun ListItem(
     displayName: String,
     icon: String?,
     usage: Long,
+    context: Context,
     onClick: (packageName: String) -> Unit
 ) {
+    val packageManager = context.packageManager
+    val placeholder = try {
+        placeholder(packageManager.getApplicationIcon(packageName))
+    } catch (e: Exception) {
+        placeholder(R.drawable.android)
+    }
     Card(
         modifier = Modifier
             .padding(5.dp)
@@ -283,6 +294,7 @@ fun ListItem(
                     contentDescription = "",
                     modifier = Modifier.size(75.dp),
                     contentScale = ContentScale.Crop,
+                    failure = placeholder
                 )
             }
             Spacer(modifier.width(20.dp))

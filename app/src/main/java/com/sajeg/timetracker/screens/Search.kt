@@ -109,6 +109,7 @@ fun Search(navController: NavController) {
                             packageName = app.packageName,
                             displayName = app.displayName,
                             icon = app.icon,
+                            context = context,
                             usage = playtimeList[app.packageName] ?: 0L
                         ) { navController.navigate(DetailScreen(app.packageName)) }
                     }
