@@ -46,4 +46,7 @@ interface Dao {
 
     @Query("DELETE FROM evententity WHERE package_name = :packageName")
     fun deleteEventByName(packageName: String)
+
+    @Query("DELETE FROM EventEntity")
+    fun deleteAllEvents()
 }

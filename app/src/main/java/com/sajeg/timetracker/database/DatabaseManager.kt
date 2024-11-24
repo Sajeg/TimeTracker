@@ -66,6 +66,12 @@ class DatabaseManager(context: Context) {
         }
     }
 
+    fun deleteAllData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.deleteAllEvents()
+        }
+    }
+
     fun close() {
         db.close()
     }

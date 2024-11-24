@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -28,7 +30,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -38,7 +39,9 @@ import com.sajeg.timetracker.R
 import com.sajeg.timetracker.Settings
 import com.sajeg.timetracker.classes.FeedbackManager
 import com.sajeg.timetracker.classes.SettingsManager
+import com.sajeg.timetracker.database.DatabaseManager
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Settings(navController: NavController) {
     val context = LocalContext.current
@@ -47,6 +50,7 @@ fun Settings(navController: NavController) {
     var hideApps by remember { mutableIntStateOf(-1) }
     var message by remember { mutableStateOf("") }
     var messageSend by remember { mutableStateOf(false) }
+    var resetDataDialog by remember { mutableStateOf(false) }
     val currentDestination = navController.currentDestination?.route
     if (timeFormat == -1) {
         SettingsManager(context).readInt("time_format") { timeFormat = it }
@@ -57,6 +61,23 @@ fun Settings(navController: NavController) {
     if (hideApps == -1) {
         SettingsManager(context).readInt("hide_unknown") { hideApps = it }
     }
+    if (resetDataDialog) {
+        AlertDialog(
+            onDismissRequest = { resetDataDialog = !resetDataDialog },
+            confirmButton = {
+                Button({
+                    val dbManager = DatabaseManager(context)
+                    dbManager.deleteAllData()
+                    dbManager.close()
+                    resetDataDialog = !resetDataDialog
+                }) { Text("Confirm") }
+            },
+            dismissButton = { Button({ resetDataDialog = !resetDataDialog }) { Text("Cancel") } },
+            title = { Text("Do you really want to reset all playtime?") },
+            text = { Text("This can't be undone.") }
+        )
+    }
+
     Row(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
@@ -102,7 +123,7 @@ fun Settings(navController: NavController) {
                     "mm/dd/yy date format",
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(15.dp)
+                    modifier = Modifier.padding(10.dp)
                 )
                 Switch(
                     checked = timeFormat == 1,
@@ -126,7 +147,7 @@ fun Settings(navController: NavController) {
                     metaDataText,
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(15.dp)
+                    modifier = Modifier.padding(10.dp)
                 )
                 Switch(
                     checked = metaData == 1,
@@ -144,7 +165,7 @@ fun Settings(navController: NavController) {
                     "Hide unknown apps",
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(15.dp)
+                    modifier = Modifier.padding(10.dp)
                 )
                 Switch(
                     checked = hideApps == 1,
@@ -157,7 +178,8 @@ fun Settings(navController: NavController) {
                     }
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Button({ resetDataDialog = true }) { Text("Reset all game data") }
+            Spacer(modifier = Modifier.height(15.dp))
             Text(
                 "Got some feedback? Or feature request? Let me know: ",
                 color = MaterialTheme.colorScheme.onBackground,
@@ -168,7 +190,7 @@ fun Settings(navController: NavController) {
                 value = message,
                 onValueChange = { message = it },
                 modifier = Modifier
-                    .size(500.dp, 200.dp)
+                    .size(500.dp, 150.dp)
                     .padding(15.dp)
             )
             Button(
@@ -192,7 +214,10 @@ fun Settings(navController: NavController) {
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n- threethan \n- The SideQuest team", color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                "Thank you to:\n- burntbreadman\n- Deufus\n- DragonzHeartz\n- threethan \n- Ellie",
+                color = MaterialTheme.colorScheme.onBackground
+            )
         }
     }
 }

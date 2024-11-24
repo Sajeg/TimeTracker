@@ -96,12 +96,9 @@ class UsageStatsFetcher(val context: Context) {
                             )
                         )
                     }
-                    Log.d("EventScanner", "new event")
                 }
-                Log.d("EventTypeSortedArray", events.map { it.eventType }.toString())
 
             }
-            Log.d("ALLEVENTS", eventEntities.toString())
             SettingsManager(context).saveLong("last_scan", endTime)
             val dbManager = DatabaseManager(context)
             dbManager.addEvent(*eventEntities.toTypedArray())

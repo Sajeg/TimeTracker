@@ -9,9 +9,8 @@ class BackgroundUpdater(appContext: Context, workerParams: WorkerParameters) :
 
     override fun doWork(): Result {
         try {
-            UsageStatsFetcher(applicationContext).updateDatabase { FeedbackManager().sendDiscordMessage("Update Success") }
+            UsageStatsFetcher(applicationContext).updateDatabase {}
         } catch (e: Exception) {
-            FeedbackManager().sendDiscordMessage("Update Failed: ${e.localizedMessage}")
             return Result.failure()
         }
         return Result.success()
