@@ -168,16 +168,18 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
         val dbManager = DatabaseManager(context)
         dbManager.getAppNames { names ->
             dbManager.close()
-            metaData.clear()
+            val newMetaData = mutableListOf<AppEntity>()
             if (hideUnknownApps) {
                 names.forEach { app ->
                     if (app.icon != null || app.landscapeImage != null) {
-                        metaData.add(app)
+                        newMetaData.add(app)
                     }
                 }
             } else {
-                metaData.addAll(names)
+                newMetaData.addAll(names)
             }
+            metaData.clear()
+            metaData.addAll(newMetaData)
         }
     }
 
