@@ -59,6 +59,8 @@ import com.sajeg.timetracker.classes.SettingsManager
 import com.sajeg.timetracker.database.AppEntity
 import com.sajeg.timetracker.database.DatabaseManager
 import com.sajeg.timetracker.millisecondsToTimeString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -176,6 +178,12 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             } else {
                 metaData.addAll(names)
             }
+        }
+    }
+
+    LaunchedEffect(time, sort) {
+        withContext(Dispatchers.Main) {
+            state.animateScrollToItem(0)
         }
     }
 
