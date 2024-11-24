@@ -298,9 +298,9 @@ fun AppGrid(modifier: Modifier, onClick: (packageName: String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(29.dp, Alignment.Top),
             horizontalArrangement = Arrangement.spacedBy(29.dp, Alignment.Start)
         ) {
-            items(metaData) { app ->
+            items(metaData, { it.packageName }) { app ->
                 val playtime = playtimeMap[app.packageName] ?: 0L
-                AppCard(onClick, app, playtime)
+                AppCard(onClick, app, playtime, Modifier.animateItem())
             }
         }
     }
@@ -398,7 +398,8 @@ fun calculateDate(
 private fun AppCard(
     onClick: (String) -> Unit,
     app: AppEntity,
-    playtime: Long
+    playtime: Long,
+    modifier: Modifier
 ) {
     val context = LocalContext.current
     val packageManager = context.packageManager
@@ -408,7 +409,7 @@ private fun AppCard(
         placeholder(R.drawable.android)
     }
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .height(160.dp)
             .clip(RoundedCornerShape(15.dp))
